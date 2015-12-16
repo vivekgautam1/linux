@@ -286,6 +286,14 @@
 			pinctrl-names = "default";
 			pinctrl-0 = <&usb3_vbus_det_gpio>;
 		};
+
+		ufsphy@627000 {
+			status = "okay";
+		};
+
+		ufshc@624000 {
+			status = "okay";
+		};
 	};
 
 
