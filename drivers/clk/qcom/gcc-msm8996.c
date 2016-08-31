@@ -1387,17 +1387,14 @@ static struct clk_branch gcc_usb3_phy_aux_clk = {
 	},
 };
 
-static struct clk_branch gcc_usb3_phy_pipe_clk = {
-	.halt_reg = 0x50004,
+static struct clk_gate2 gcc_usb3_phy_pipe_clk = {
+	.udelay = 50,
 	.clkr = {
 		.enable_reg = 0x50004,
 		.enable_mask = BIT(0),
 		.hw.init = &(struct clk_init_data){
 			.name = "gcc_usb3_phy_pipe_clk",
-			.parent_names = (const char *[]){ "usb3_phy_pipe_clk_src" },
-			.num_parents = 1,
-			.flags = CLK_SET_RATE_PARENT,
-			.ops = &clk_branch2_ops,
+			.ops = &clk_gate2_ops,
 		},
 	},
 };
