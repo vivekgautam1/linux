@@ -14,6 +14,7 @@
 #include <dt-bindings/clock/qcom,gcc-msm8996.h>
 #include <dt-bindings/clock/qcom,mmcc-msm8996.h>
 #include <dt-bindings/clock/qcom,rpmcc.h>
+#include <dt-bindings/phy/phy.h>
 
 / {
 	model = "Qualcomm Technologies, Inc. MSM8996";
@@ -977,6 +978,32 @@
 			reset-names = "phy", "common";
 
 			nlanes = <1>;
+		};
+
+		usb3: usb@6a00000 {
+			compatible = "qcom,dwc3";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			clocks = <&gcc GCC_USB30_MASTER_CLK>,
+				<&gcc GCC_SYS_NOC_USB3_AXI_CLK>,
+				<&gcc GCC_AGGRE2_USB3_AXI_CLK>,
+				<&gcc GCC_USB30_MOCK_UTMI_CLK>,
+				<&gcc GCC_USB30_SLEEP_CLK>,
+				<&gcc GCC_USB_PHY_CFG_AHB2PHY_CLK>;
+
+			assigned-clocks = <&gcc GCC_USB30_MOCK_UTMI_CLK>;
+			assigned-clock-rates = <19200000>;
+
+			dwc3@6a00000 {
+				compatible = "snps,dwc3";
+				reg = <0x06a00000 0xc9ff>;
+				interrupts = <0 131 0>;
+				phys = <&hsphy>, <&ssphy PHY_TYPE_USB3 0>;
+				phy-names = "usb2-phy", "usb3-phy";
+				dr_mode = "host";
+			};
 		};
 	};
 
