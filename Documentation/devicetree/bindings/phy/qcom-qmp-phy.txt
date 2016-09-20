@@ -1,0 +1,44 @@
+Qualcomm QMP PHY
+----------------
+
+Required properties:
+ - compatible: compatible list, contains "qcom,qmp-14nm-phy".
+
+ - reg: offset and length of the pcie PHY register set.
+ - reg-names: must be:	"serdes" for serial deserializer,
+			"tx" for tx specific registers,
+			"rx" for rx specific registers,
+			"pcs" for pcs specific registers.
+
+ - #phy-cells: must be 2
+    - Cell after phy phandle is device type from:
+	- PHY_TYPE_PCIE
+	- PHY_TYPE_UFS
+	- PHY_TYPE_USB3
+    - Second cell should be the port number.
+
+ - clocks: a list of phandles and clock-specifier pairs,
+	   one for each entry in clock-names.
+ - clock-names: must be "cfg_ahb" for phy config clock,
+			"aux" for phy aux clock,
+			"ref_clk" for 19.2 MHz ref clk,
+			"ref_clk_src" reference clock source.
+			"pipe" pipe clock (Optional)
+
+ - resets: a list of phandles and reset controller specifier pairs,
+	   one for each entry in reset-names.
+ - reset-names: must be	"phy" for reset of phy block,
+			"common" for phy common reset,
+			"cfg" for phy's ahb cfg reset (Optional),
+			"port<port-number>" for reset specific to
+			  each port (Optional)
+
+ - vdda-phy-supply: Phandle to a regulator supply to PHY core block.
+ - vdda-pll-supply: Phandle to a regulator supply to PHY refclk pll block.
+ - vddp-ref-clk-supply: Phandle to a regulator supply to any specific reflclk
+			pll block (Optional).
+
+ - nlanes: Number of lanes supported by the phy.
+ - lane-offset: address offset at which the lanes are separated from one
+		 another in memory space (Optional, valid only for phys that
+		 have nlanes > 1).
