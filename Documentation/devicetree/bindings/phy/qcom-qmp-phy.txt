@@ -1,0 +1,76 @@
+Qualcomm QMP PHY
+----------------
+
+Required properties:
+ - compatible: compatible list, contains "qcom,qmp-14nm-phy".
+ - reg: offset and length of the PHY register set.
+ - #phy-cells: must be 2.
+    - Cell after phy phandle is device type from:
+	- PHY_TYPE_PCIE
+	- PHY_TYPE_UFS
+	- PHY_TYPE_USB3
+    - Second cell should be the port (lane) number.
+ - clocks: a list of phandles and clock-specifier pairs,
+	   one for each entry in clock-names.
+ - clock-names: must be "cfg_ahb" for phy config clock,
+			"aux" for phy aux clock,
+			"ref_clk" for 19.2 MHz ref clk,
+			"ref_clk_src" reference clock source,
+			"pipe" pipe clock (Optional).
+ - resets: a list of phandles and reset controller specifier pairs,
+	   one for each entry in reset-names.
+ - reset-names: must be	"phy" for reset of phy block,
+			"common" for phy common reset,
+			"cfg" for phy's ahb cfg reset (Optional).
+ - vdda-phy-supply: Phandle to a regulator supply to PHY core block.
+ - vdda-pll-supply: Phandle to 1.8V regulator supply to PHY refclk pll block.
+
+Optional properties:
+ - vddp-ref-clk-supply: Phandle to a regulator supply to any specific reflclk
+			pll block.
+
+Required nodes:
+ Each device node of QMP phy is required to have as many child nodes as
+ the number of ports (lanes) PHY has.
+
+Required properties (port/child node):
+ - tx-offset: offset to port's Tx register address space.
+ - rx-offset: offset to port's Rx register address space.
+ - pcs-offset: offset to port's PCS register address space.
+
+Optional properties (port/child node):
+ - resets: a list of phandles and reset controller specifier pairs,
+	   one for each entry in reset-names.
+ - reset-names: "lane<port-number>" for reset specific to
+		each port (lane).
+
+Example:
+	pcie_phy: pciephy@34000 {
+		compatible = "qcom,qmp-14nm-phy";
+		reg = <0x034000 0x3fff>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#phy-cells = <2>;
+
+		clocks = <&gcc GCC_PCIE_PHY_AUX_CLK>,
+			<&gcc GCC_PCIE_PHY_CFG_AHB_CLK>;
+		clock-names = "aux", "cfg_ahb";
+
+		vdda-phy-supply = <&pm8994_l28>;
+		vdda-pll-supply = <&pm8994_l12>;
+
+		resets = <&gcc GCC_PCIE_PHY_BCR>,
+			<&gcc GCC_PCIE_PHY_COM_BCR>,
+			<&gcc GCC_PCIE_PHY_COM_NOCSR_BCR>;
+		reset-names = "phy", "common", "cfg";
+
+		port@0 {
+			reg = <0>;
+			tx-offset = <0x1000>;
+			rx-offset = <0x1200>;
+			pcs-offset = <0x1400>;
+			resets = <&gcc GCC_PCIE_0_PHY_BCR>;
+			reset-names = "lane0";
+		};
+		...
+	};
