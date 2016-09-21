@@ -225,7 +225,7 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
-
+/*
 		blsp2_uart2: serial@75b1000 {
 			compatible = "qcom,msm-uartdm-v1.4", "qcom,msm-uartdm";
 			reg = <0x075b1000 0x1000>;
@@ -235,7 +235,7 @@
 			clock-names = "core", "iface";
 			status = "disabled";
 		};
-
+*/
 		blsp1_i2c2: i2c@07577000 {
 			compatible = "qcom,i2c-qup-v2.2.1";
 			reg = <0x07577000 0x1000>;
