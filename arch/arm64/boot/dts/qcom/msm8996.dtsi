@@ -571,40 +571,39 @@
 				<0x678c 0x10>;
 		};
 
-		pcie_phy: qcom,pciephy@34000 {
-			compatible = "qcom,msm8996-pcie-phy";
+		pcie_phy: pciephy@34000 {
+			compatible = "qcom,msm8996-qmp-pcie-phy";
+			reg = <0x034000 0x488>,
+			      <0x035000 0x5bf>,
+			      <0x036000 0x5bf>,
+			      <0x037000 0x5bf>;
+			lane-offsets = <0x0 0x200 0x400>;
 			#phy-cells = <1>;
-			reg = <0x00034000 0x4000>;
+
+			clocks = <&gcc GCC_PCIE_PHY_AUX_CLK>,
+				<&gcc GCC_PCIE_PHY_CFG_AHB_CLK>,
+				<&rpmcc MSM8996_RPM_SMD_LN_BB_CLK>,
+				<&gcc GCC_PCIE_CLKREF_CLK>,
+				<&gcc GCC_PCIE_0_PIPE_CLK>,
+				<&gcc GCC_PCIE_1_PIPE_CLK>,
+				<&gcc GCC_PCIE_2_PIPE_CLK>;
+			clock-names = "aux", "cfg_ahb",
+					"ref_clk_src", "ref_clk",
+					"pipe0", "pipe1", "pipe2";
+
+			vdda-phy-supply = <&pm8994_l28>;
+			vdda-pll-supply = <&pm8994_l12>;
+
 			resets = <&gcc GCC_PCIE_PHY_BCR>,
 				<&gcc GCC_PCIE_PHY_COM_BCR>,
-				<&gcc GCC_PCIE_PHY_COM_NOCSR_BCR>;
-			reset-names = "phy_com",  "phy_com2", "phy_cfg";
-	
-			clocks = <&gcc GCC_PCIE_PHY_CFG_AHB_CLK>,
-				<&gcc GCC_PCIE_PHY_AUX_CLK>;
-			clock-names = "cfg", "aux";
-	
-			#address-cells = <1>;
-			#size-cells = <0>;
-			pcie_phy@0{
-				reg = <0>;
-				resets = <&gcc GCC_PCIE_0_PHY_BCR>;
-				reset-names = "phy";
-			};
-	
-			pcie_phy1{
-				reg = <1>;
-				resets = <&gcc GCC_PCIE_1_PHY_BCR>;
-				reset-names = "phy";
-			};
-	
-			pcie_phy@2{
-				reg = <2>;
-				resets = <&gcc GCC_PCIE_2_PHY_BCR>;
-				reset-names = "phy";
-			};
+				<&gcc GCC_PCIE_PHY_COM_NOCSR_BCR>,
+				<&gcc GCC_PCIE_0_PHY_BCR>,
+				<&gcc GCC_PCIE_1_PHY_BCR>,
+				<&gcc GCC_PCIE_2_PHY_BCR>;
+			reset-names = "phy", "common", "cfg",
+					"lane0", "lane1", "lane2";
 		};
-	
+
 		pcie0: qcom,pcie@00600000 {
 			compatible = "qcom,pcie-msm8996", "snps,dw-pcie";
 			status = "disabled";
