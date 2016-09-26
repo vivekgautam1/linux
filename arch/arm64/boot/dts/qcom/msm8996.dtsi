@@ -560,40 +560,51 @@
 				<0x678c 0x10>;
 		};
 
-		pcie_phy: qcom,pciephy@34000 {
-			compatible = "qcom,msm8996-pcie-phy";
-			#phy-cells = <1>;
-			reg = <0x00034000 0x4000>;
+		pcie_phy: pciephy@34000 {
+			compatible = "qcom,qmp-14nm-phy";
+			reg = <0x034000 0x3fff>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#phy-cells = <2>;
+
+			clocks = <&gcc GCC_PCIE_PHY_AUX_CLK>,
+				<&gcc GCC_PCIE_PHY_CFG_AHB_CLK>;
+			clock-names = "aux", "cfg_ahb";
+
+			vdda-phy-supply = <&pm8994_l28>;
+			vdda-pll-supply = <&pm8994_l12>;
+
 			resets = <&gcc GCC_PCIE_PHY_BCR>,
 				<&gcc GCC_PCIE_PHY_COM_BCR>,
 				<&gcc GCC_PCIE_PHY_COM_NOCSR_BCR>;
-			reset-names = "phy_com",  "phy_com2", "phy_cfg";
-	
-			clocks = <&gcc GCC_PCIE_PHY_CFG_AHB_CLK>,
-				<&gcc GCC_PCIE_PHY_AUX_CLK>;
-			clock-names = "cfg", "aux";
-	
-			#address-cells = <1>;
-			#size-cells = <0>;
-			pcie_phy@0{
+			reset-names = "phy", "common", "cfg";
+
+			port@0 {
 				reg = <0>;
+				tx-offset = <0x1000>;
+				rx-offset = <0x1200>;
+				pcs-offset = <0x1400>;
 				resets = <&gcc GCC_PCIE_0_PHY_BCR>;
-				reset-names = "phy";
+				reset-names = "lane0";
 			};
-	
-			pcie_phy1{
+			port@1 {
 				reg = <1>;
+				tx-offset = <0x2000>;
+				rx-offset = <0x2200>;
+				pcs-offset = <0x2400>;
 				resets = <&gcc GCC_PCIE_1_PHY_BCR>;
-				reset-names = "phy";
+				reset-names = "lane1";
 			};
-	
-			pcie_phy@2{
+			port@2 {
 				reg = <2>;
+				tx-offset = <0x3000>;
+				rx-offset = <0x3200>;
+				pcs-offset = <0x3400>;
 				resets = <&gcc GCC_PCIE_2_PHY_BCR>;
-				reset-names = "phy";
+				reset-names = "lane2";
 			};
 		};
-	
+
 		pcie0: qcom,pcie@00600000 {
 			compatible = "qcom,pcie-msm8996", "snps,dw-pcie";
 			status = "disabled";
@@ -607,7 +618,7 @@
 			      <0x0c100000 0x100000>;
 			reg-names = "parf", "dbi", "elbi","config";
 	
-			phys = <&pcie_phy 0>;
+			phys = <&pcie_phy PHY_TYPE_PCIE 0>;
 			phy-names = "pciephy";
 	
 			#address-cells = <3>;
@@ -671,7 +682,7 @@
 	
 			reg-names = "parf", "dbi", "elbi","config";
 	
-			phys = <&pcie_phy 1>;
+			phys = <&pcie_phy PHY_TYPE_PCIE 1>;
 			phy-names = "pciephy";
 	
 			#address-cells = <3>;
@@ -733,7 +744,7 @@
 	
 			reg-names = "parf", "dbi", "elbi","config";
 	
-			phys = <&pcie_phy 2>;
+			phys = <&pcie_phy PHY_TYPE_PCIE 2>;
 			phy-names = "pciephy";
 	
 			#address-cells = <3>;
