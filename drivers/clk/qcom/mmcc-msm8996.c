@@ -3059,6 +3059,18 @@ static struct gdsc mdss_gdsc = {
 	.pwrsts = PWRSTS_OFF_ON,
 };
 
+static struct gdsc gpu_gx_gdsc = {
+	.gdscr = 0x4024,
+	.clamp_io_ctrl = 0x4300,
+	.cxcs = (unsigned int []){ 0x4028 },
+	.cxc_count = 1,
+	.pd = {
+		.name = "gpu_gx",
+	},
+	.pwrsts = PWRSTS_OFF_ON,
+	.flags = CLAMP_IO,
+};
+
 static struct gdsc gpu_gdsc = {
 	.gdscr = 0x4034,
 	.gds_hw_ctrl = 0x4038,
@@ -3070,20 +3082,9 @@ static struct gdsc gpu_gdsc = {
 		&mmss_mmagic_cfg_ahb_clk.clkr.hw,
 	},
 	.clk_count = 2,
+	.parent = &gpu_gx_gdsc.pd,
 	.pwrsts = PWRSTS_OFF_ON,
 	.flags = VOTABLE,
-};
-
-static struct gdsc gpu_gx_gdsc = {
-	.gdscr = 0x4024,
-	.clamp_io_ctrl = 0x4300,
-	.cxcs = (unsigned int []){ 0x4028 },
-	.cxc_count = 1,
-	.pd = {
-		.name = "gpu_gx",
-	},
-	.pwrsts = PWRSTS_OFF_ON,
-	.flags = CLAMP_IO,
 };
 
 static struct clk_regmap *mmcc_msm8996_clocks[] = {
