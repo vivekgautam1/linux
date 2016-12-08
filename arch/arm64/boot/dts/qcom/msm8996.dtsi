@@ -943,19 +943,15 @@
 			#phy-cells = <0>;
 
 			clocks = <&gcc GCC_USB_PHY_CFG_AHB2PHY_CLK>,
-				<&gcc GCC_RX1_USB2_CLKREF_CLK>,
-				<&rpmcc MSM8996_RPM_SMD_LN_BB_CLK>;
-			clock-names = "cfg_ahb_clk", "ref_clk", "ref_clk_src";
+				<&gcc GCC_RX1_USB2_CLKREF_CLK>;
+			clock-names = "cfg_ahb", "ref";
 
 			vdd-phy-supply = <&pm8994_s2>;
 			vdda-pll-supply = <&pm8994_l12>;
 			vdda-phy-dpdm-supply = <&pm8994_l24>;
 
 			resets = <&gcc GCC_QUSB2PHY_PRIM_BCR>;
-			reset-names = "phy";
-
 			nvmem-cells = <&qusb2p_hstx_trim>;
-			nvmem-cell-names = "tune2_hstx_trim_efuse";
                 };
 
 		ssphy: usb3phy@7410000 {
