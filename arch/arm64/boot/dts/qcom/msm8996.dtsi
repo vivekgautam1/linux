@@ -579,16 +579,15 @@
 			      <0x037000 0x5bf>;
 			lane-offsets = <0x0 0x200 0x400>;
 			#phy-cells = <1>;
+			#clock-cells = <1>;
 
 			clocks = <&gcc GCC_PCIE_PHY_AUX_CLK>,
 				<&gcc GCC_PCIE_PHY_CFG_AHB_CLK>,
-				<&rpmcc MSM8996_RPM_SMD_LN_BB_CLK>,
 				<&gcc GCC_PCIE_CLKREF_CLK>,
 				<&gcc GCC_PCIE_0_PIPE_CLK>,
 				<&gcc GCC_PCIE_1_PIPE_CLK>,
 				<&gcc GCC_PCIE_2_PIPE_CLK>;
-			clock-names = "aux", "cfg_ahb",
-					"ref_clk_src", "ref_clk",
+			clock-names = "aux", "cfg_ahb", "ref",
 					"pipe0", "pipe1", "pipe2";
 
 			vdda-phy-supply = <&pm8994_l28>;
@@ -960,16 +959,15 @@
 			      <0x7410200 0x5a8>;
 			lane-offsets = <0x0 0x200 0x400>;
 			#phy-cells = <1>;
+			#clock-cells = <1>;
 
 			clocks = <&gcc GCC_USB3_PHY_AUX_CLK>,
 				<&gcc GCC_USB_PHY_CFG_AHB2PHY_CLK>,
-				<&rpmcc MSM8996_RPM_SMD_LN_BB_CLK>,
 				<&gcc GCC_USB3_CLKREF_CLK>,
 				<&gcc GCC_USB3_PHY_PIPE_CLK>;
 			clock-names = "aux",
 					"cfg_ahb",
-					"ref_clk_src",
-					"ref_clk",
+					"ref",
 					"pipe0";
 
 			vdda-phy-supply = <&pm8994_l28>;
