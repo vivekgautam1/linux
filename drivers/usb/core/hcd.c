@@ -2496,22 +2496,6 @@ static void init_giveback_urb_bh(struct giveback_urb_bh *bh)
 	tasklet_init(&bh->bh, usb_giveback_urb_bh, (unsigned long)bh);
 }
 
-/**
- * usb_create_shared_hcd - create and initialize an HCD structure
- * @driver: HC driver that will use this hcd
- * @dev: device for this HC, stored in hcd->self.controller
- * @bus_name: value to store in hcd->self.bus_name
- * @primary_hcd: a pointer to the usb_hcd structure that is sharing the
- *              PCI device.  Only allocate certain resources for the primary HCD
- * Context: !in_interrupt()
- *
- * Allocate a struct usb_hcd, with extra space at the end for the
- * HC driver's private data.  Initialize the generic members of the
- * hcd structure.
- *
- * Return: On success, a pointer to the created and initialized HCD structure.
- * On failure (e.g. if memory is unavailable), %NULL.
- */
 struct usb_hcd *__usb_create_hcd(const struct hc_driver *driver,
 		struct device *sysdev, struct device *dev, const char *bus_name,
 		struct usb_hcd *primary_hcd)
@@ -2573,6 +2557,22 @@ struct usb_hcd *__usb_create_hcd(const struct hc_driver *driver,
 }
 EXPORT_SYMBOL_GPL(__usb_create_hcd);
 
+/**
+ * usb_create_shared_hcd - create and initialize an HCD structure
+ * @driver: HC driver that will use this hcd
+ * @dev: device for this HC, stored in hcd->self.controller
+ * @bus_name: value to store in hcd->self.bus_name
+ * @primary_hcd: a pointer to the usb_hcd structure that is sharing the
+ *              PCI device.  Only allocate certain resources for the primary HCD
+ * Context: !in_interrupt()
+ *
+ * Allocate a struct usb_hcd, with extra space at the end for the
+ * HC driver's private data.  Initialize the generic members of the
+ * hcd structure.
+ *
+ * Return: On success, a pointer to the created and initialized HCD structure.
+ * On failure (e.g. if memory is unavailable), %NULL.
+ */
 struct usb_hcd *usb_create_shared_hcd(const struct hc_driver *driver,
 		struct device *dev, const char *bus_name,
 		struct usb_hcd *primary_hcd)
