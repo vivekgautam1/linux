@@ -449,9 +449,8 @@ struct qmp_phy {
  * @vdda_pll: 1.8V vdd supply to ref_clk block
  * @vddp_ref_clk: vdd supply to specific ref_clk block (Optional)
  *
- * @phy_rst: phy reset control
- * @phycom_rst: phy common reset control
- * @phycfg_rst: phy ahb cfg reset control (Optional)
+ * @resets: list of available phy reset controls
+ * @reset_count: count of resets
  *
  * @cfg: phy specific configuration
  * @phys: array of per-lane phy descriptors
@@ -470,9 +469,8 @@ struct qcom_qmp {
 	struct regulator *vdda_pll;
 	struct regulator *vddp_ref_clk;
 
-	struct reset_control *phy_rst;
-	struct reset_control *phycom_rst;
-	struct reset_control *phycfg_rst;
+	struct reset_control **resets;
+	int reset_count;
 
 	const struct qmp_phy_cfg *cfg;
 	struct qmp_phy **phys;
@@ -645,7 +643,7 @@ static int qcom_qmp_phy_com_init(struct qcom_qmp *qmp)
 {
 	const struct qmp_phy_cfg *cfg = qmp->cfg;
 	void __iomem *serdes = qmp->serdes;
-	int ret;
+	int ret, i;
 
 	mutex_lock(&qmp->phy_mutex);
 	if (qmp->init_count++) {
@@ -653,23 +651,12 @@ static int qcom_qmp_phy_com_init(struct qcom_qmp *qmp)
 		return 0;
 	}
 
-	ret = reset_control_deassert(qmp->phy_rst);
-	if (ret) {
-		dev_err(qmp->dev, "phy reset deassert failed\n");
-		goto err_rst;
-	}
-
-	ret = reset_control_deassert(qmp->phycom_rst);
-	if (ret) {
-		dev_err(qmp->dev, "common reset deassert failed\n");
-		goto err_com_rst;
-	}
-
-	if (qmp->phycfg_rst) {
-		ret = reset_control_deassert(qmp->phycfg_rst);
+	for (i = 0; i < qmp->reset_count; i++) {
+		ret = reset_control_deassert(qmp->resets[i]);
 		if (ret) {
-			dev_err(qmp->dev, "ahb cfg reset deassert failed\n");
-			goto err_cfg_rst;
+			while (--i >= 0)
+				reset_control_assert(qmp->resets[i]);
+			return ret;
 		}
 	}
 
@@ -707,13 +694,9 @@ static int qcom_qmp_phy_com_init(struct qcom_qmp *qmp)
 	return 0;
 
 err_com_init:
-	if (qmp->phycfg_rst)
-		reset_control_assert(qmp->phycfg_rst);
-err_cfg_rst:
-	reset_control_assert(qmp->phycom_rst);
-err_com_rst:
-	reset_control_assert(qmp->phy_rst);
-err_rst:
+	for (i = 0; i < qmp->reset_count; i++)
+		reset_control_assert(qmp->resets[i]);
+
 	mutex_unlock(&qmp->phy_mutex);
 	return ret;
 }
@@ -722,6 +705,7 @@ static int qcom_qmp_phy_com_exit(struct qcom_qmp *qmp)
 {
 	const struct qmp_phy_cfg *cfg = qmp->cfg;
 	void __iomem *serdes = qmp->serdes;
+	int i;
 
 	mutex_lock(&qmp->phy_mutex);
 	if (--qmp->init_count) {
@@ -738,11 +722,8 @@ static int qcom_qmp_phy_com_exit(struct qcom_qmp *qmp)
 				SW_PWRDN);
 	}
 
-	if (qmp->phycfg_rst)
-		reset_control_assert(qmp->phycfg_rst);
-
-	reset_control_assert(qmp->phycom_rst);
-	reset_control_assert(qmp->phy_rst);
+	for (i = 0; i < qmp->reset_count; i++)
+		reset_control_assert(qmp->resets[i]);
 
 	mutex_unlock(&qmp->phy_mutex);
 
@@ -921,6 +902,33 @@ static int qcom_qmp_phy_clk_init(struct device *dev)
 		if (ret != -EPROBE_DEFER)
 			dev_err(dev, "failed to get ref_clk, %d\n", ret);
 		return ret;
+	}
+
+	return 0;
+}
+
+static int qcom_qmp_phy_reset_init(struct device *dev)
+{
+	struct qcom_qmp *qmp = dev_get_drvdata(dev);
+	int i;
+
+	qmp->reset_count = of_reset_control_get_count(dev->of_node);
+	if(!qmp->reset_count)
+		return 0;
+
+	qmp->resets = devm_kcalloc(dev, qmp->reset_count,
+					sizeof(*qmp->resets), GFP_KERNEL);
+	if (!qmp->resets)
+		return -ENOMEM;
+
+	for (i = 0; i < qmp->reset_count; i++) {
+		struct reset_control *reset;
+
+		reset = devm_reset_control_get_by_index(dev, i);
+		if (IS_ERR(reset))
+			return PTR_ERR(reset);
+
+		qmp->resets[i] = reset;
 	}
 
 	return 0;
@@ -1115,23 +1123,9 @@ static int qcom_qmp_phy_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	qmp->phy_rst = devm_reset_control_get(dev, "phy");
-	if (IS_ERR(qmp->phy_rst)) {
-		dev_err(dev, "failed to get phy core reset\n");
-		return PTR_ERR(qmp->phy_rst);
-	}
-
-	qmp->phycom_rst = devm_reset_control_get(dev, "common");
-	if (IS_ERR(qmp->phycom_rst)) {
-		dev_err(dev, "failed to get phy common reset\n");
-		return PTR_ERR(qmp->phycom_rst);
-	}
-
-	qmp->phycfg_rst = devm_reset_control_get(dev, "cfg");
-	if (IS_ERR(qmp->phycfg_rst)) {
-		dev_dbg(dev, "failed to get phy ahb cfg reset\n");
-		qmp->phycfg_rst = NULL;
-	}
+	ret = qcom_qmp_phy_reset_init(dev);
+	if (ret)
+		return ret;
 
 	/* do we have a rogue child node ? */
 	if (of_get_available_child_count(dev->of_node) != qmp->cfg->nlanes)
