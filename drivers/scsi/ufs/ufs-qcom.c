@@ -270,18 +270,22 @@ static int ufs_qcom_power_up_sequence(struct ufs_hba *hba)
 	struct ufs_qcom_host *host = ufshcd_get_variant(hba);
 	struct phy *phy = host->generic_phy;
 	int ret = 0;
+	/*
+	 * TODO: Pass this to phy driver somehow; right now we explicitly
+	 * use this as true in phy driver since this is calculated
+	 * to be true below.
 	bool is_rate_B = (UFS_QCOM_LIMIT_HS_RATE == PA_HS_MODE_B)
 							? true : false;
+	 */
 
 	/* Assert PHY reset and apply PHY calibration values */
 	ufs_qcom_assert_reset(hba);
 	/* provide 1ms delay to let the reset pulse propagate */
 	usleep_range(1000, 1100);
 
-	ret = ufs_qcom_phy_calibrate_phy(phy, is_rate_B);
-
+	ret = phy_init(phy);
 	if (ret) {
-		dev_err(hba->dev, "%s: ufs_qcom_phy_calibrate_phy() failed, ret = %d\n",
+		dev_err(hba->dev, "%s: phy initialization failed, ret = %d\n",
 			__func__, ret);
 		goto out;
 	}
@@ -294,18 +298,13 @@ static int ufs_qcom_power_up_sequence(struct ufs_hba *hba)
 	 * voltage, current to settle down before starting serdes.
 	 */
 	usleep_range(1000, 1100);
-	ret = ufs_qcom_phy_start_serdes(phy);
+
+	ret = phy_power_on(host->generic_phy);
 	if (ret) {
-		dev_err(hba->dev, "%s: ufs_qcom_phy_start_serdes() failed, ret = %d\n",
+		dev_err(hba->dev, "%s: phy_power_on() failed, ret = %d\n",
 			__func__, ret);
 		goto out;
 	}
-
-	ret = ufs_qcom_phy_is_pcs_ready(phy);
-	if (ret)
-		dev_err(hba->dev,
-			"%s: is_physical_coding_sublayer_ready() failed, ret = %d\n",
-			__func__, ret);
 
 	ufs_qcom_select_unipro_mode(host);
 
@@ -1273,10 +1272,9 @@ static int ufs_qcom_init(struct ufs_hba *hba)
 	ufs_qcom_phy_save_controller_version(host->generic_phy,
 		host->hw_ver.major, host->hw_ver.minor, host->hw_ver.step);
 
-	phy_init(host->generic_phy);
 	err = phy_power_on(host->generic_phy);
 	if (err)
-		goto out_unregister_bus;
+		goto out_variant_clear;
 
 	err = ufs_qcom_init_lane_clks(host);
 	if (err)
@@ -1303,8 +1301,6 @@ static int ufs_qcom_init(struct ufs_hba *hba)
 
 out_disable_phy:
 	phy_power_off(host->generic_phy);
-out_unregister_bus:
-	phy_exit(host->generic_phy);
 out_variant_clear:
 	ufshcd_set_variant(hba, NULL);
 out:
@@ -1317,7 +1313,6 @@ static void ufs_qcom_exit(struct ufs_hba *hba)
 
 	ufs_qcom_disable_lane_clks(host);
 	phy_power_off(host->generic_phy);
-	phy_exit(host->generic_phy);
 }
 
 static int ufs_qcom_set_dme_vs_core_clk_ctrl_clear_div(struct ufs_hba *hba,
