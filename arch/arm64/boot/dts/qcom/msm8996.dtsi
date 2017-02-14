@@ -575,7 +575,6 @@
 
 			resets = <&gcc GCC_USB3_PHY_BCR>,
 				<&gcc GCC_USB3PHY_PHY_BCR>;
-			reset-names = "phy", "common";
 
 			ssphy_0: lane@0 {
 				reg = <0x7410200 0x200>,
