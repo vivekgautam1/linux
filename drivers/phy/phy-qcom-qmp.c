@@ -130,9 +130,7 @@
 #define QSERDES_RX_RX_INTERFACE_MODE			0x12c
 
 /* QMP PHY PCS registers */
-#define QPHY_SW_RESET					0x00
 #define QPHY_POWER_DOWN_CONTROL				0x04
-#define QPHY_START_CTRL					0x08
 #define QPHY_TXDEEMPH_M6DB_V0				0x24
 #define QPHY_TXDEEMPH_M3P5DB_V0				0x28
 #define QPHY_ENDPOINT_REFCLK_DRIVE			0x54
@@ -201,6 +199,8 @@ enum qphy_reg_layout {
 	QPHY_FLL_CNT_VAL_L,
 	QPHY_FLL_CNT_VAL_H_TOL,
 	QPHY_FLL_MAN_CODE,
+	QPHY_SW_RESET,
+	QPHY_START_CTRL,
 	QPHY_PCS_READY_STATUS,
 };
 
@@ -215,10 +215,13 @@ static const unsigned int pciephy_regs_layout[] = {
 	[QPHY_FLL_CNT_VAL_L]		= 0xcc,
 	[QPHY_FLL_CNT_VAL_H_TOL]	= 0xd0,
 	[QPHY_FLL_MAN_CODE]		= 0xd4,
+	[QPHY_SW_RESET]			= 0x00,
+	[QPHY_START_CTRL]		= 0x08,
 	[QPHY_PCS_READY_STATUS]		= 0x174,
 };
 
 static const unsigned int ufsphy_regs_layout[] = {
+	[QPHY_START_CTRL]		= 0x00,
 	[QPHY_PCS_READY_STATUS]		= 0x168,
 };
 
@@ -228,6 +231,8 @@ static const unsigned int usb3phy_regs_layout[] = {
 	[QPHY_FLL_CNT_VAL_L]		= 0xc8,
 	[QPHY_FLL_CNT_VAL_H_TOL]	= 0xcc,
 	[QPHY_FLL_MAN_CODE]		= 0xd0,
+	[QPHY_SW_RESET]			= 0x00,
+	[QPHY_START_CTRL]		= 0x08,
 	[QPHY_PCS_READY_STATUS]		= 0x17c,
 };
 
@@ -875,10 +880,11 @@ static int qcom_qmp_phy_init(struct phy *phy)
 		usleep_range(cfg->pwrdn_delay_min, cfg->pwrdn_delay_max);
 
 	/* start SerDes and Phy-Coding-Sublayer */
-	qphy_setbits(pcs, QPHY_START_CTRL, cfg->start_ctrl);
+	qphy_setbits(pcs, cfg->regs[QPHY_START_CTRL], cfg->start_ctrl);
 
-	/* Pull PHY out of reset state */
-	qphy_clrbits(pcs, QPHY_SW_RESET, SW_RESET);
+	if (cfg->type != PHY_TYPE_UFS)
+		/* Pull PHY out of reset state */
+		qphy_clrbits(pcs, cfg->regs[QPHY_SW_RESET], SW_RESET);
 
 	status = pcs + cfg->regs[QPHY_PCS_READY_STATUS];
 	mask = cfg->mask_pcs_ready;
