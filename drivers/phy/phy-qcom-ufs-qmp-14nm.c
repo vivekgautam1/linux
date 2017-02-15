@@ -44,7 +44,19 @@ void ufs_qcom_phy_qmp_14nm_advertise_quirks(struct ufs_qcom_phy *phy_common)
 
 static int ufs_qcom_phy_qmp_14nm_init(struct phy *generic_phy)
 {
-	return 0;
+	struct ufs_qcom_phy_qmp_14nm *phy = phy_get_drvdata(generic_phy);
+	struct ufs_qcom_phy *phy_common = &phy->common_cfg;
+	int err;
+
+	/*
+	 * TODO: we set is_rate_B explicitly to true here;
+	 * figure out a way to pass this from controller to phy
+	 */
+	err = ufs_qcom_phy_qmp_14nm_phy_calibrate(phy_common, true);
+	if (err)
+		return err;
+
+	return err;
 }
 
 static int ufs_qcom_phy_qmp_14nm_exit(struct phy *generic_phy)
@@ -106,7 +118,6 @@ static const struct phy_ops ufs_qcom_phy_qmp_14nm_phy_ops = {
 };
 
 static struct ufs_qcom_phy_specific_ops phy_14nm_ops = {
-	.calibrate_phy		= ufs_qcom_phy_qmp_14nm_phy_calibrate,
 	.start_serdes		= ufs_qcom_phy_qmp_14nm_start_serdes,
 	.is_physical_coding_sublayer_ready = ufs_qcom_phy_qmp_14nm_is_pcs_ready,
 	.set_tx_lane_enable	= ufs_qcom_phy_qmp_14nm_set_tx_lane_enable,
