@@ -415,6 +415,10 @@
 				reg = <0x24e 0x2>;
 				bits = <5 4>;
 			};
+			qusb2s_hstx_trim: hstx_trim@24f {
+				reg = <0x24f 0x1>;
+				bits = <1 4>;
+			};
 		};
 
 		sdhc2: sdhci@74a4900 {
@@ -538,7 +542,7 @@
 					       <825000000>;
 		};
 
-		hsphy: phy@7411000 {
+		hsphy_1: phy@7411000 {
 			compatible = "qcom,msm8996-qusb2-phy";
 			reg = <0x07411000 0x180>;
 			#phy-cells = <0>;
@@ -554,6 +558,23 @@
 			resets = <&gcc GCC_QUSB2PHY_PRIM_BCR>;
 			nvmem-cells = <&qusb2p_hstx_trim>;
                 };
+
+		hsphy_2: phy@7412000 {
+			compatible = "qcom,msm8996-qusb2-phy";
+			reg = <0x07412000 0x180>;
+			#phy-cells = <0>;
+
+			clocks = <&gcc GCC_USB_PHY_CFG_AHB2PHY_CLK>,
+				<&gcc GCC_RX2_USB2_CLKREF_CLK>;
+			clock-names = "cfg_ahb", "ref";
+
+			vdd-phy-supply = <&pm8994_s2>;
+			vdda-pll-supply = <&pm8994_l12>;
+			vdda-phy-dpdm-supply = <&pm8994_l24>;
+
+			resets = <&gcc GCC_QUSB2PHY_SEC_BCR>;
+			nvmem-cells = <&qusb2s_hstx_trim>;
+		};
 
 		phy@7410000 {
 			compatible = "qcom,msm8996-qmp-usb3-phy";
@@ -585,6 +606,35 @@
 			};
 		};
 
+		usb2: usb@7600000 {
+			compatible = "qcom,dwc3";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			clocks = <&gcc GCC_PERIPH_NOC_USB20_AHB_CLK>,
+				<&gcc GCC_USB20_MASTER_CLK>,
+				<&gcc GCC_USB20_MOCK_UTMI_CLK>,
+				<&gcc GCC_USB20_SLEEP_CLK>,
+				<&gcc GCC_USB_PHY_CFG_AHB2PHY_CLK>;
+
+			assigned-clocks = <&gcc GCC_USB20_MOCK_UTMI_CLK>,
+					  <&gcc GCC_USB20_MASTER_CLK>;
+			assigned-clock-rates = <19200000>, <60000000>;
+
+			power-domains = <&gcc USB30_GDSC>;
+
+			dwc3@7600000 {
+				compatible = "snps,dwc3";
+				reg = <0x07600000 0xcc00>;
+				interrupts = <0 138 0>;
+				phys = <&hsphy_2>;
+				phy-names = "usb2-phy";
+				maximum-speed = "high-speed";
+				dr_mode = "host";
+			};
+		};
+
 		usb3: usb@6a00000 {
 			compatible = "qcom,dwc3";
 			#address-cells = <1>;
@@ -608,7 +658,7 @@
 				compatible = "snps,dwc3";
 				reg = <0x06a00000 0xcc00>;
 				interrupts = <0 131 0>;
-				phys = <&hsphy>, <&ssphy_0>;
+				phys = <&hsphy_1>, <&ssphy_0>;
 				phy-names = "usb2-phy", "usb3-phy";
 				dr_mode = "host";
 			};
