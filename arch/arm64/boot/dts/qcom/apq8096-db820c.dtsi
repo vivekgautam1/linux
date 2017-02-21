@@ -237,6 +237,18 @@
 			status = "okay";
 		};
 
+		phy@34000 {
+			lane@35000 {
+				status = "okay";
+			};
+			lane@36000 {
+				status = "okay";
+			};
+			lane@37000 {
+				status = "okay";
+			};
+		};
+
 		phy@7410000 {
 			lane@7410200 {
 				status = "okay";
