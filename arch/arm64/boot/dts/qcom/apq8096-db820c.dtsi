@@ -252,6 +252,20 @@
 				perst-gpio = <&msmgpio 114 GPIO_ACTIVE_LOW>;
 			};
 		};
+
+		usb@6a00000 {
+			dwc3@6a00000 {
+				extcon = <&usb3_id>;
+				dr_mode = "otg";
+			};
+		};
+
+		usb3_id: usb3-id {
+			compatible = "linux,extcon-usb-gpio";
+			id-gpio = <&pm8994_gpios 22 GPIO_ACTIVE_HIGH>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&usb3_vbus_det_gpio>;
+		};
 	};
 
 
