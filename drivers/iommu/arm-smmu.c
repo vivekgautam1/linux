@@ -217,6 +217,9 @@ struct arm_smmu_device {
 
 	/* IOMMU core code handle */
 	struct iommu_device		iommu;
+
+	/* runtime PM link to master */
+	struct device_link *link;
 };
 
 enum arm_smmu_context_fmt {
@@ -1473,11 +1476,27 @@ static int arm_smmu_add_device(struct device *dev)
 
 	iommu_device_link(&smmu->iommu, dev);
 
+	/*
+	 * Establish the link between smmu and master, so that the
+	 * smmu gets runtime enabled/disabled as per the master's
+	 * needs.
+	 */
+	smmu->link = device_link_add(dev, smmu->dev, DL_FLAG_PM_RUNTIME);
+	if (!smmu->link) {
+		dev_warn(smmu->dev, "Unable to create device link between %s and %s\n",
+			 dev_name(smmu->dev), dev_name(dev));
+		ret = -ENODEV;
+		goto out_unlink;
+	}
+
 	if (smmu->rpm_supported)
 		pm_runtime_put_sync(smmu->dev);
 
 	return 0;
 
+out_unlink:
+	iommu_device_unlink(&smmu->iommu, dev);
+	arm_smmu_master_free_smes(fwspec);
 out_rpm_put:
 	if (smmu->rpm_supported)
 		pm_runtime_put_sync(smmu->dev);
@@ -1501,6 +1520,7 @@ static void arm_smmu_remove_device(struct device *dev)
 	cfg  = fwspec->iommu_priv;
 	smmu = cfg->smmu;
 
+	device_link_del(smmu->link);
 	if (smmu->rpm_supported) {
 		ret = pm_runtime_get_sync(smmu->dev);
 		if (ret < 0)
