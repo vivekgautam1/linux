@@ -209,6 +209,8 @@ struct arm_smmu_device {
 	struct clk_bulk_data		*clks;
 	int				num_clks;
 
+	bool				rpm_supported;
+
 	u32				cavium_id_base; /* Specific to Cavium */
 
 	spinlock_t			global_sync_lock;
@@ -913,10 +915,16 @@ static void arm_smmu_destroy_domain_context(struct iommu_domain *domain)
 	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
 	struct arm_smmu_device *smmu = smmu_domain->smmu;
 	struct arm_smmu_cfg *cfg = &smmu_domain->cfg;
-	int irq;
+	int ret, irq;
 
 	if (!smmu || domain->type == IOMMU_DOMAIN_IDENTITY)
 		return;
+
+	if (smmu->rpm_supported) {
+		ret = pm_runtime_get_sync(smmu->dev);
+		if (ret < 0)
+			return;
+	}
 
 	/*
 	 * Disable the context bank and free the page tables before freeing
@@ -932,6 +940,9 @@ static void arm_smmu_destroy_domain_context(struct iommu_domain *domain)
 
 	free_io_pgtable_ops(smmu_domain->pgtbl_ops);
 	__arm_smmu_free_bitmap(smmu->context_map, cfg->cbndx);
+
+	if (smmu->rpm_supported)
+		pm_runtime_put(smmu->dev);
 }
 
 static struct iommu_domain *arm_smmu_domain_alloc(unsigned type)
@@ -1213,10 +1224,17 @@ static int arm_smmu_attach_dev(struct iommu_domain *domain, struct device *dev)
 		return -ENODEV;
 
 	smmu = fwspec_smmu(fwspec);
+
+	if (smmu->rpm_supported) {
+		ret = pm_runtime_get_sync(smmu->dev);
+		if (ret < 0)
+			return ret;
+	}
+
 	/* Ensure that the domain is finalised */
 	ret = arm_smmu_init_domain_context(domain, smmu);
 	if (ret < 0)
-		return ret;
+		goto rpm_put;
 
 	/*
 	 * Sanity check the domain. We don't support domains across
@@ -1231,10 +1249,19 @@ static int arm_smmu_attach_dev(struct iommu_domain *domain, struct device *dev)
 	}
 
 	/* Looks ok, so add the device to the domain */
-	return arm_smmu_domain_add_master(smmu_domain, fwspec);
+	ret = arm_smmu_domain_add_master(smmu_domain, fwspec);
+
+	if (smmu->rpm_supported)
+		pm_runtime_put_sync(smmu->dev);
+
+	return ret;
 
 destroy_domain:
 	arm_smmu_destroy_domain_context(domain);
+rpm_put:
+	if (smmu->rpm_supported)
+		pm_runtime_put_sync(smmu->dev);
+
 	return ret;
 }
 
@@ -1242,22 +1269,44 @@ static int arm_smmu_map(struct iommu_domain *domain, unsigned long iova,
 			phys_addr_t paddr, size_t size, int prot)
 {
 	struct io_pgtable_ops *ops = to_smmu_domain(domain)->pgtbl_ops;
+	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
+	struct arm_smmu_device *smmu = smmu_domain->smmu;
+	int ret;
 
 	if (!ops)
 		return -ENODEV;
 
-	return ops->map(ops, iova, paddr, size, prot);
+	if (smmu->rpm_supported)
+		pm_runtime_get_sync(smmu->dev);
+
+	ret = ops->map(ops, iova, paddr, size, prot);
+
+	if (smmu->rpm_supported)
+		pm_runtime_put_sync(smmu->dev);
+
+	return ret;
 }
 
 static size_t arm_smmu_unmap(struct iommu_domain *domain, unsigned long iova,
 			     size_t size)
 {
 	struct io_pgtable_ops *ops = to_smmu_domain(domain)->pgtbl_ops;
+	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
+	struct arm_smmu_device *smmu = smmu_domain->smmu;
+	size_t ret;
 
 	if (!ops)
 		return 0;
 
-	return ops->unmap(ops, iova, size);
+	if (smmu->rpm_supported)
+		pm_runtime_get_sync(smmu->dev);
+
+	ret = ops->unmap(ops, iova, size);
+
+	if (smmu->rpm_supported)
+		pm_runtime_put_sync(smmu->dev);
+
+	return ret;
 }
 
 static void arm_smmu_iotlb_sync(struct iommu_domain *domain)
@@ -1412,14 +1461,26 @@ static int arm_smmu_add_device(struct device *dev)
 	while (i--)
 		cfg->smendx[i] = INVALID_SMENDX;
 
+	if (smmu->rpm_supported) {
+		ret = pm_runtime_get_sync(smmu->dev);
+		if (ret < 0)
+			goto out_cfg_free;
+	}
+
 	ret = arm_smmu_master_alloc_smes(dev);
 	if (ret)
-		goto out_cfg_free;
+		goto out_rpm_put;
 
 	iommu_device_link(&smmu->iommu, dev);
 
+	if (smmu->rpm_supported)
+		pm_runtime_put_sync(smmu->dev);
+
 	return 0;
 
+out_rpm_put:
+	if (smmu->rpm_supported)
+		pm_runtime_put_sync(smmu->dev);
 out_cfg_free:
 	kfree(cfg);
 out_free:
@@ -1432,7 +1493,7 @@ static void arm_smmu_remove_device(struct device *dev)
 	struct iommu_fwspec *fwspec = dev->iommu_fwspec;
 	struct arm_smmu_master_cfg *cfg;
 	struct arm_smmu_device *smmu;
-
+	int ret;
 
 	if (!fwspec || fwspec->ops != &arm_smmu_ops)
 		return;
@@ -1440,8 +1501,18 @@ static void arm_smmu_remove_device(struct device *dev)
 	cfg  = fwspec->iommu_priv;
 	smmu = cfg->smmu;
 
+	if (smmu->rpm_supported) {
+		ret = pm_runtime_get_sync(smmu->dev);
+		if (ret < 0)
+			return;
+	}
+
 	iommu_device_unlink(&smmu->iommu, dev);
 	arm_smmu_master_free_smes(fwspec);
+
+	if (smmu->rpm_supported)
+		pm_runtime_put(smmu->dev);
+
 	iommu_group_remove_device(dev);
 	kfree(fwspec->iommu_priv);
 	iommu_fwspec_free(dev);
@@ -1907,6 +1978,7 @@ struct arm_smmu_match_data {
 	enum arm_smmu_implementation model;
 	const char * const *clks;
 	int num_clks;
+	bool rpm_supported;
 };
 
 #define ARM_SMMU_MATCH_DATA(name, ver, imp)	\
@@ -2029,6 +2101,7 @@ static int arm_smmu_device_dt_probe(struct platform_device *pdev,
 	smmu->version = data->version;
 	smmu->model = data->model;
 	smmu->num_clks = data->num_clks;
+	smmu->rpm_supported = data->rpm_supported;
 
 	arm_smmu_fill_clk_data(smmu, data->clks);
 
@@ -2133,6 +2206,16 @@ static int arm_smmu_device_probe(struct platform_device *pdev)
 	if (err)
 		return err;
 
+	platform_set_drvdata(pdev, smmu);
+
+	if (smmu->rpm_supported) {
+		pm_runtime_enable(dev);
+
+		err = pm_runtime_get_sync(dev);
+		if (err < 0)
+			return err;
+	}
+
 	err = arm_smmu_device_cfg_probe(smmu);
 	if (err)
 		return err;
@@ -2174,9 +2257,11 @@ static int arm_smmu_device_probe(struct platform_device *pdev)
 		return err;
 	}
 
-	platform_set_drvdata(pdev, smmu);
 	arm_smmu_device_reset(smmu);
 	arm_smmu_test_smr_masks(smmu);
+
+	if (smmu->rpm_supported)
+		pm_runtime_put_sync(dev);
 
 	/*
 	 * For ACPI and generic DT bindings, an SMMU will be probed before
@@ -2213,8 +2298,16 @@ static int arm_smmu_device_remove(struct platform_device *pdev)
 	if (!bitmap_empty(smmu->context_map, ARM_SMMU_MAX_CBS))
 		dev_err(&pdev->dev, "removing device with active domains!\n");
 
+	if (smmu->rpm_supported)
+		pm_runtime_get_sync(smmu->dev);
 	/* Turn the thing off */
 	writel(sCR0_CLIENTPD, ARM_SMMU_GR0_NS(smmu) + ARM_SMMU_GR0_sCR0);
+
+	if (smmu->rpm_supported) {
+		pm_runtime_put(smmu->dev);
+		pm_runtime_disable(smmu->dev);
+	}
+
 	return 0;
 }
 
