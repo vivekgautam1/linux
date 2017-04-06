@@ -441,7 +441,7 @@ config PHY_STIH407_USB
 
 config PHY_QCOM_QMP
 	tristate "Qualcomm QMP PHY Driver"
-	depends on OF && (ARCH_QCOM || COMPILE_TEST)
+	depends on OF && COMMON_CLK && (ARCH_QCOM || COMPILE_TEST)
 	select GENERIC_PHY
 	help
 	  Enable this to support the QMP PHY transceiver that is used
