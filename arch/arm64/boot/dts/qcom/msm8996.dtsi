@@ -75,6 +75,12 @@
 			reg = <0x0 0x86200000 0x0 0x2600000>;
 			no-map;
 		};
+
+		zap_shader_region: gpu@8f200000 {
+			compatible = "shared-dma-pool";
+			reg = <0 0x8f200000 0 0x2300000>;
+			no-map;
+		};
 	};
 
 	cpus {
@@ -997,6 +1003,25 @@
 						"bus_master",
 						"bus_slave";
 			};
+		};
+
+		adreno_smmu: arm,smmu@b40000 {
+			compatible = "qcom,smmu-v2";
+			reg = <0xb40000 0x10000>;
+
+			#global-interrupts = <1>;
+			interrupts = <0 334 0>,
+				     <0 329 0>,
+				     <0 330 0>;
+			#iommu-cells = <1>;
+
+			clocks = <&mmcc GPU_AHB_CLK>,
+				<&gcc GCC_MMSS_BIMC_GFX_CLK>;
+			clock-names = "bus", "iface";
+
+			power-domains = <&mmcc GPU_GDSC>;
+
+			status = "okay";
 		};
 
 		mdp_smmu: arm,smmu@d00000 {
