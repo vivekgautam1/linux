@@ -177,5 +177,25 @@
 		serial@75b0000 {
 			status = "okay";
 		};
+
+		phy@7410000 {
+			status = "okay";
+		};
+
+		phy@7411000 {
+			status = "okay";
+		};
+
+		phy@7412000 {
+			status = "okay";
+		};
+
+		usb@6a00000 {
+			status = "okay";
+
+			dwc3@6a00000 {
+				dr_mode = "host";
+			};
+		};
 	};
 };
