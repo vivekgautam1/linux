@@ -403,3 +403,11 @@
 		};
 	};
 };
+
+&venus_smmu {
+	status = "okay";
+};
+
+&venus {
+	status = "okay";
+};
