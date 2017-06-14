@@ -1358,7 +1358,7 @@
 		};
 
 		venus_smmu: arm,smmu-venus@d40000 {
-			compatible = "qcom,smmu-v2";
+			compatible = "arm,smmu-v2";
 			reg = <0xd40000 0x20000>;
 			#global-interrupts = <1>;
 			interrupts = <GIC_SPI 286 IRQ_TYPE_LEVEL_HIGH>,
