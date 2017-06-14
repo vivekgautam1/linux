@@ -1370,16 +1370,10 @@
 				     <GIC_SPI 340 IRQ_TYPE_LEVEL_HIGH>,
 				     <GIC_SPI 341 IRQ_TYPE_LEVEL_HIGH>;
 			power-domains = <&mmcc MMAGIC_VIDEO_GDSC>;
-			clocks = <&mmcc MMSS_MMAGIC_AHB_CLK>,
-				 <&mmcc MMSS_MMAGIC_CFG_AHB_CLK>,
-				 <&mmcc SMMU_VIDEO_AHB_CLK>,
-				 <&mmcc SMMU_VIDEO_AXI_CLK>,
-				 <&mmcc MMAGIC_VIDEO_AXI_CLK>;
-			clock-names = "mmagic_ahb_clk",
-				      "mmagic_cfg_ahb_clk",
-				      "smmu_core_ahb_clk",
-				      "smmu_core_axi_clk",
-				      "mmagic_core_axi_clk";
+			clocks = <&mmcc SMMU_VIDEO_AHB_CLK>,
+				 <&mmcc SMMU_VIDEO_AXI_CLK>;
+			clock-names = "smmu_core_ahb_clk",
+				      "smmu_core_axi_clk";
 			#iommu-cells = <1>;
 			status = "disabled";
 		};
