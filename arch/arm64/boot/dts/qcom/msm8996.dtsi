@@ -1369,7 +1369,7 @@
 				     <GIC_SPI 339 IRQ_TYPE_LEVEL_HIGH>,
 				     <GIC_SPI 340 IRQ_TYPE_LEVEL_HIGH>,
 				     <GIC_SPI 341 IRQ_TYPE_LEVEL_HIGH>;
-			power-domains = <&mmcc MMAGIC_VIDEO_GDSC>;
+			power-domains = <&mmcc VENUS_GDSC>;
 			clocks = <&mmcc SMMU_VIDEO_AHB_CLK>,
 				 <&mmcc SMMU_VIDEO_AXI_CLK>;
 			clock-names = "smmu_core_ahb_clk",
