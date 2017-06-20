@@ -103,6 +103,26 @@ static int dwc3_get_dr_mode(struct dwc3 *dwc)
 static void dwc3_event_buffers_cleanup(struct dwc3 *dwc);
 static int dwc3_event_buffers_setup(struct dwc3 *dwc);
 
+#define QSCRATCH_REG_OFFSET     (0x000F8800)
+#define HS_PHY_CTRL_REG         (QSCRATCH_REG_OFFSET + 0x10)
+#define UTMI_OTG_VBUS_VALID     BIT(20)
+#define SW_SESSVLD_SEL          BIT(28)
+
+#define SS_PHY_CTRL_REG         (QSCRATCH_REG_OFFSET + 0x30)
+#define LANE0_PWR_PRESENT       BIT(24)
+
+static void dwc3_override_vbus_status(struct dwc3 *dwc, bool vbus_present)
+{
+	/* OTG VBUS Valid from HSPHY */
+	dwc3_writel(dwc->regs, HS_PHY_CTRL_REG,
+		    vbus_present ? UTMI_OTG_VBUS_VALID | SW_SESSVLD_SEL : 0);
+
+	 /* Super Speed is supported ? */
+	if (dwc->maximum_speed >= USB_SPEED_SUPER)
+		dwc3_writel(dwc->regs, SS_PHY_CTRL_REG,
+			    vbus_present ? LANE0_PWR_PRESENT : 0);
+}
+
 static void dwc3_set_prtcap(struct dwc3 *dwc, u32 mode)
 {
 	u32 reg;
@@ -133,6 +153,7 @@ static void __dwc3_set_mode(struct work_struct *work)
 		dwc3_host_exit(dwc);
 		break;
 	case DWC3_GCTL_PRTCAP_DEVICE:
+		dwc3_override_vbus_status(dwc, 0);
 		dwc3_gadget_exit(dwc);
 		dwc3_event_buffers_cleanup(dwc);
 		break;
@@ -155,6 +176,7 @@ static void __dwc3_set_mode(struct work_struct *work)
 			dev_err(dwc->dev, "failed to initialize host\n");
 		break;
 	case DWC3_GCTL_PRTCAP_DEVICE:
+		dwc3_override_vbus_status(dwc, 1);
 		dwc3_event_buffers_setup(dwc);
 		ret = dwc3_gadget_init(dwc);
 		if (ret)

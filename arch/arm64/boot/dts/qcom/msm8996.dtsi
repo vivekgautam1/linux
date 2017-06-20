@@ -772,7 +772,7 @@
 
 			dwc3@7600000 {
 				compatible = "snps,dwc3";
-				reg = <0x7600000 0xcc00>;
+				reg = <0x7600000 0xfc000>;
 				interrupts = <0 138 0>;
 				phys = <&hsusb_phy2>;
 				phy-names = "usb2-phy";
@@ -801,7 +801,7 @@
 
 			dwc3@6a00000 {
 				compatible = "snps,dwc3";
-				reg = <0x6a00000 0xcc00>;
+				reg = <0x6a00000 0xfc000>;
 				interrupts = <0 131 0>;
 				phys = <&hsusb_phy1>, <&ssusb_phy_0>;
 				phy-names = "usb2-phy", "usb3-phy";
