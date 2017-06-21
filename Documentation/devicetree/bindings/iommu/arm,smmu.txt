@@ -18,6 +18,7 @@ conditions.
                         "arm,mmu-500"
                         "cavium,smmu-v2"
                         "qcom,msm8996-smmu-v2"
+                        "qcom,msm8996-gpu-smmu-v2"
 
                   depending on the particular implementation and/or the
                   version of the architecture implemented.
@@ -88,6 +89,9 @@ conditions.
 
                   "iface" clock is required to access the TCU's programming
                   interface, apart from the "tcu" clock.
+
+                  Must contain "gpu_ahb_clk", "gcc_mmss_bimc_gfx_clk", and
+                  "gcc_bimc_gfx_clk" for "qcom,msm8996-gpu-smmu-v2".
 
 - clocks:         Phandles for respective clocks described by clock-names.
 

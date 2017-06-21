@@ -1970,11 +1970,22 @@ static const char * const qcom_msm8996_smmuv2_clks[] = {
 	"bus", "iface",
 };
 
+static const char * const qcom_msm8996_gpu_smmuv2_clks[] = {
+	"gpu_ahb_clk", "gcc_mmss_bimc_gfx_clk", "gcc_bimc_gfx_clk",
+};
+
 static const struct arm_smmu_match_data qcom_msm8996_smmuv2 = {
 	.version = ARM_SMMU_V2,
 	.model = QCOM_MSM8996_SMMUV2,
 	.clks = qcom_msm8996_smmuv2_clks,
 	.num_clks = ARRAY_SIZE(qcom_msm8996_smmuv2_clks),
+};
+
+static const struct arm_smmu_match_data qcom_msm8996_gpu_smmuv2 = {
+	.version = ARM_SMMU_V2,
+	.model = QCOM_MSM8996_SMMUV2,
+	.clks = qcom_msm8996_gpu_smmuv2_clks,
+	.num_clks = ARRAY_SIZE(qcom_msm8996_gpu_smmuv2_clks),
 };
 
 static const struct of_device_id arm_smmu_of_match[] = {
@@ -1985,6 +1996,7 @@ static const struct of_device_id arm_smmu_of_match[] = {
 	{ .compatible = "arm,mmu-500", .data = &arm_mmu500 },
 	{ .compatible = "cavium,smmu-v2", .data = &cavium_smmuv2 },
 	{ .compatible = "qcom,msm8996-smmu-v2", .data = &qcom_msm8996_smmuv2 },
+	{ .compatible = "qcom,msm8996-gpu-smmu-v2", .data = &qcom_msm8996_gpu_smmuv2 },
 	{ },
 };
 MODULE_DEVICE_TABLE(of, arm_smmu_of_match);
