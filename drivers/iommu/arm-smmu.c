@@ -119,6 +119,7 @@ enum arm_smmu_implementation {
 	GENERIC_SMMU,
 	ARM_MMU500,
 	CAVIUM_SMMUV2,
+	QCOM_QSMMU_V2,
 };
 
 struct arm_smmu_s2cr {
@@ -1981,6 +1982,17 @@ static const struct arm_smmu_match_data arm_mmu500 = {
 	.num_clks = ARRAY_SIZE(arm_mmu500_clks),
 };
 
+static const char * const qcom_qsmmu_v2_clks[] = {
+	"bus", "iface",
+};
+
+static const struct arm_smmu_match_data qcom_qsmmu_v2 = {
+	.version = ARM_SMMU_V2,
+	.model = QCOM_QSMMU_V2,
+	.clks = qcom_qsmmu_v2_clks,
+	.num_clks = ARRAY_SIZE(qcom_qsmmu_v2_clks),
+};
+
 static const struct of_device_id arm_smmu_of_match[] = {
 	{ .compatible = "arm,smmu-v1", .data = &smmu_generic_v1 },
 	{ .compatible = "arm,smmu-v2", .data = &smmu_generic_v2 },
@@ -1988,6 +2000,7 @@ static const struct of_device_id arm_smmu_of_match[] = {
 	{ .compatible = "arm,mmu-401", .data = &arm_mmu401 },
 	{ .compatible = "arm,mmu-500", .data = &arm_mmu500 },
 	{ .compatible = "cavium,smmu-v2", .data = &cavium_smmuv2 },
+	{ .compatible = "qcom,qsmmu-v2", .data = &qcom_qsmmu_v2 },
 	{ },
 };
 MODULE_DEVICE_TABLE(of, arm_smmu_of_match);
