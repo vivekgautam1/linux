@@ -113,6 +113,7 @@ static int dwc3_of_simple_probe(struct platform_device *pdev)
 	pm_runtime_set_active(dev);
 	pm_runtime_enable(dev);
 	pm_runtime_get_sync(dev);
+	pm_runtime_put_noidle(dev);
 
 	return 0;
 }
