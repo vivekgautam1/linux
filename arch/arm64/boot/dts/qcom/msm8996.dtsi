@@ -1094,11 +1094,9 @@
 			#iommu-cells = <1>;
 
 			clocks = <&mmcc GPU_AHB_CLK>,
-				<&gcc GCC_MMSS_BIMC_GFX_CLK>,
-				<&gcc GCC_BIMC_GFX_CLK>;
+				<&gcc GCC_MMSS_BIMC_GFX_CLK>;
 			clock-names = "gpu_ahb_clk",
-				"gcc_mmss_bimc_gfx_clk",
-				"gcc_bimc_gfx_clk";
+				"gcc_mmss_bimc_gfx_clk";
 
 			power-domains = <&mmcc GPU_GDSC>;
 
