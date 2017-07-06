@@ -1084,7 +1084,7 @@
 		};
 
 		adreno_smmu: arm,smmu@b40000 {
-			compatible = "qcom,msm8996-gpu-smmu-v2";
+			compatible = "qcom,msm8996-smmu-v2";
 			reg = <0xb40000 0x10000>;
 
 			#global-interrupts = <1>;
@@ -1095,8 +1095,7 @@
 
 			clocks = <&mmcc GPU_AHB_CLK>,
 				<&gcc GCC_MMSS_BIMC_GFX_CLK>;
-			clock-names = "gpu_ahb_clk",
-				"gcc_mmss_bimc_gfx_clk";
+			clock-names = "iface", "bus";
 
 			power-domains = <&mmcc GPU_GDSC>;
 
