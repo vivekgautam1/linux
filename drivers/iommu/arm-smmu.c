@@ -451,6 +451,10 @@ static void arm_smmu_tlb_sync_context(void *cookie)
 	struct arm_smmu_device *smmu = smmu_domain->smmu;
 	void __iomem *base = ARM_SMMU_CB(smmu, smmu_domain->cfg.cbndx);
 
+	/* smmu suspended? we can't perform TLB operations */
+	if (pm_runtime_suspended(smmu->dev))
+		return;
+
 	__arm_smmu_tlb_sync(smmu, base + ARM_SMMU_CB_TLBSYNC,
 			    base + ARM_SMMU_CB_TLBSTATUS);
 }
@@ -458,6 +462,9 @@ static void arm_smmu_tlb_sync_context(void *cookie)
 static void arm_smmu_tlb_sync_vmid(void *cookie)
 {
 	struct arm_smmu_domain *smmu_domain = cookie;
+
+	if (pm_runtime_suspended(smmu_domain->smmu->dev))
+		return;
 
 	arm_smmu_tlb_sync_global(smmu_domain->smmu);
 }
@@ -489,6 +496,9 @@ static void arm_smmu_tlb_inv_range_nosync(unsigned long iova, size_t size,
 	struct arm_smmu_cfg *cfg = &smmu_domain->cfg;
 	bool stage1 = cfg->cbar != CBAR_TYPE_S2_TRANS;
 	void __iomem *reg = ARM_SMMU_CB(smmu_domain->smmu, cfg->cbndx);
+
+	if (pm_runtime_suspended(smmu_domain->smmu->dev))
+		return;
 
 	if (stage1) {
 		reg += leaf ? ARM_SMMU_CB_S1_TLBIVAL : ARM_SMMU_CB_S1_TLBIVA;
@@ -530,6 +540,9 @@ static void arm_smmu_tlb_inv_vmid_nosync(unsigned long iova, size_t size,
 {
 	struct arm_smmu_domain *smmu_domain = cookie;
 	void __iomem *base = ARM_SMMU_GR0(smmu_domain->smmu);
+
+	if (pm_runtime_suspended(smmu_domain->smmu->dev))
+		return;
 
 	writel_relaxed(smmu_domain->cfg.vmid, base + ARM_SMMU_GR0_TLBIVMID);
 }
@@ -1274,20 +1287,11 @@ static size_t arm_smmu_unmap(struct iommu_domain *domain, unsigned long iova,
 {
 	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
 	struct io_pgtable_ops *ops = smmu_domain->pgtbl_ops;
-	size_t ret;
 
 	if (!ops)
 		return 0;
 
-	if (!in_atomic())
-		pm_runtime_get_sync(smmu_domain->smmu->dev);
-
-	ret = ops->unmap(ops, iova, size);
-
-	if (!in_atomic())
-		pm_runtime_put_sync(smmu_domain->smmu->dev);
-
-	return ret;
+	return ops->unmap(ops, iova, size);
 }
 
 static phys_addr_t arm_smmu_iova_to_phys_hard(struct iommu_domain *domain,
@@ -2310,8 +2314,15 @@ static int arm_smmu_device_remove(struct platform_device *pdev)
 static int arm_smmu_resume(struct device *dev)
 {
 	struct arm_smmu_device *smmu = dev_get_drvdata(dev);
+	int ret;
 
-	return arm_smmu_enable_clocks(smmu);
+	ret = arm_smmu_enable_clocks(smmu);
+	if (ret)
+		return ret;
+
+	arm_smmu_device_reset(smmu);
+
+	return 0;
 }
 
 static int arm_smmu_suspend(struct device *dev)
