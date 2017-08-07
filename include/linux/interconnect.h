@@ -15,13 +15,15 @@ struct device;
 
 #if IS_ENABLED(CONFIG_INTERCONNECT)
 
-struct icc_path *icc_get(const int src_id, const int dst_id);
+struct icc_path *icc_get(struct device *dev, const int src_id,
+			 const int dst_id);
 void icc_put(struct icc_path *path);
 int icc_set(struct icc_path *path, u32 avg_bw, u32 peak_bw);
 
 #else
 
-static inline struct icc_path *icc_get(const int src_id, const int dst_id)
+static inline struct icc_path *icc_get(struct device *dev, const int src_id,
+				       const int dst_id)
 {
 	return NULL;
 }
