@@ -2,3 +2,4 @@
 obj-y += smd-rpm.o
 
 obj-$(CONFIG_INTERCONNECT_QCOM_MSM8916) += msm8916.o
+obj-$(CONFIG_INTERCONNECT_QCOM_MSM8996) += msm8996.o
