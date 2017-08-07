@@ -41,8 +41,8 @@ struct qcom_icc_provider {
 /**
  * struct qcom_icc_node - Qualcomm specific interconnect nodes
  * @name: the node name used in debugfs
- * @links: an array of nodes where we can go next while traversing
  * @id: a unique node identifier
+ * @links: an array of nodes where we can go next while traversing
  * @num_links: the total number of @links
  * @port: the offset index into the masters QoS register space
  * @buswidth: width of the interconnect between a node and the bus (bytes)
@@ -54,8 +54,8 @@ struct qcom_icc_provider {
  */
 struct qcom_icc_node {
 	unsigned char *name;
-	u16 links[MSM8916_MAX_LINKS];
 	u16 id;
+	u16 links[MSM8916_MAX_LINKS];
 	u16 num_links;
 	u16 port;
 	u16 buswidth;
@@ -75,14 +75,14 @@ struct qcom_icc_desc {
 			_mas_rpm_id, _slv_rpm_id, _qos_mode,		\
 			_numlinks, ...)					\
 		static struct qcom_icc_node _name = {			\
-		.id = _id,						\
 		.name = #_name,						\
+		.id = _id,						\
 		.port = _port,						\
 		.buswidth = _buswidth,					\
-		.qos_mode = _qos_mode,					\
 		.ap_owned = _ap_owned,					\
 		.mas_rpm_id = _mas_rpm_id,				\
 		.slv_rpm_id = _slv_rpm_id,				\
+		.qos_mode = _qos_mode,					\
 		.num_links = _numlinks,					\
 		.links = { __VA_ARGS__ },				\
 	}
@@ -300,8 +300,8 @@ static int qcom_icc_set(struct icc_node *src, struct icc_node *dst,
 	struct icc_provider *provider;
 	u64 avg_bw = icc_units_to_bps(avg);
 	u64 peak_bw = icc_units_to_bps(peak);
-	u64 rate = 0;
 	int ret = 0;
+	u64 rate;
 
 	if (!src)
 		node = dst;
@@ -310,7 +310,7 @@ static int qcom_icc_set(struct icc_node *src, struct icc_node *dst,
 
 	qn = node->data;
 	provider = node->provider;
-	qp = to_qcom_provider(node->provider);
+	qp = to_qcom_provider(provider);
 
 	/* set bandwidth */
 	if (qn->ap_owned) {
@@ -413,6 +413,7 @@ static int qnoc_probe(struct platform_device *pdev)
 	ret = clk_prepare_enable(qp->bus_a_clk);
 	if (ret) {
 		dev_err(&pdev->dev, "error enabling bus_a_clk: %d\n", ret);
+		clk_disable_unprepare(qp->bus_clk);
 		return ret;
 	}
 
@@ -426,6 +427,8 @@ static int qnoc_probe(struct platform_device *pdev)
 	ret = icc_provider_add(provider);
 	if (ret) {
 		dev_err(&pdev->dev, "error adding interconnect provider\n");
+		clk_disable_unprepare(qp->bus_clk);
+		clk_disable_unprepare(qp->bus_a_clk);
 		return ret;
 	}
 
@@ -459,6 +462,8 @@ err:
 		icc_node_del(node);
 		icc_node_destroy(node->id);
 	}
+	clk_disable_unprepare(qp->bus_clk);
+	clk_disable_unprepare(qp->bus_a_clk);
 	icc_provider_del(provider);
 
 	return ret;
@@ -474,6 +479,9 @@ static int qnoc_remove(struct platform_device *pdev)
 		icc_node_del(n);
 		icc_node_destroy(n->id);
 	}
+	clk_disable_unprepare(qp->bus_clk);
+	clk_disable_unprepare(qp->bus_a_clk);
+
 
 	return icc_provider_del(provider);
 }
