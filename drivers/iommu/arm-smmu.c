@@ -1245,9 +1245,13 @@ static size_t arm_smmu_unmap(struct iommu_domain *domain, unsigned long iova,
 	if (!ops)
 		return 0;
 
-	pm_runtime_get_sync(smmu_domain->smmu->dev);
+	if (!in_atomic())
+		pm_runtime_get_sync(smmu_domain->smmu->dev);
+
 	ret = ops->unmap(ops, iova, size);
-	pm_runtime_put_sync(smmu_domain->smmu->dev);
+
+	if (!in_atomic())
+		pm_runtime_put_sync(smmu_domain->smmu->dev);
 
 	return ret;
 }
