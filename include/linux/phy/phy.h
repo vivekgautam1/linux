@@ -33,6 +33,14 @@ enum phy_mode {
 	PHY_MODE_UFS_HS_B,
 };
 
+enum phy_speed {
+	PHY_SPEED_UNKNOWN,
+	PHY_SPEED_USB_LS,
+	PHY_SPEED_USB_FS,
+	PHY_SPEED_USB_HS,
+	PHY_SPEED_USB_SS,
+};
+
 /**
  * struct phy_ops - set of function pointers for performing phy operations
  * @init: operation to be performed for initializing phy
@@ -42,6 +50,8 @@ enum phy_mode {
  * @set_mode: set the mode of the phy
  * @reset: resetting the phy
  * @calibrate: calibrate the phy
+ * @notify_speed: notify phy driver of current speed of PHY
+ * @get_speed: get current operational speed of PHY
  * @owner: the module owner containing the ops
  */
 struct phy_ops {
@@ -52,6 +62,8 @@ struct phy_ops {
 	int	(*set_mode)(struct phy *phy, enum phy_mode mode);
 	int	(*reset)(struct phy *phy);
 	int	(*calibrate)(struct phy *phy);
+	int	(*notify_speed)(struct phy *phy, enum phy_speed speed);
+	enum phy_speed (*get_speed)(struct phy *phy);
 	struct module *owner;
 };
 
@@ -146,6 +158,8 @@ int phy_power_off(struct phy *phy);
 int phy_set_mode(struct phy *phy, enum phy_mode mode);
 int phy_reset(struct phy *phy);
 int phy_calibrate(struct phy *phy);
+int phy_notify_speed(struct phy *phy, enum phy_speed speed);
+enum phy_speed phy_get_speed(struct phy *phy);
 static inline int phy_get_bus_width(struct phy *phy)
 {
 	return phy->attrs.bus_width;
@@ -272,6 +286,18 @@ static inline int phy_calibrate(struct phy *phy)
 	if (!phy)
 		return 0;
 	return -ENOSYS;
+}
+
+static inline int phy_notify_speed(struct phy *phy, enum phy_speed speed)
+{
+	if (!phy)
+		return 0;
+	return -EINVAL;
+}
+
+static inline enum phy_speed phy_get_speed(struct phy *phy)
+{
+	return PHY_SPEED_UNKNOWN;
 }
 
 static inline int phy_get_bus_width(struct phy *phy)

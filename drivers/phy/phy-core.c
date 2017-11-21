@@ -387,6 +387,36 @@ int phy_calibrate(struct phy *phy)
 }
 EXPORT_SYMBOL_GPL(phy_calibrate);
 
+int phy_notify_speed(struct phy *phy, enum phy_speed speed)
+{
+	int ret;
+
+	if (!phy || !phy->ops->notify_speed)
+		return 0;
+
+	mutex_lock(&phy->mutex);
+	ret = phy->ops->notify_speed(phy, speed);
+	mutex_unlock(&phy->mutex);
+
+	return ret;
+}
+EXPORT_SYMBOL_GPL(phy_notify_speed);
+
+enum phy_speed phy_get_speed(struct phy *phy)
+{
+	enum phy_speed ret;
+
+	if (!phy || !phy->ops->get_speed)
+		return PHY_SPEED_UNKNOWN;
+
+	mutex_lock(&phy->mutex);
+	ret = phy->ops->get_speed(phy);
+	mutex_unlock(&phy->mutex);
+
+	return ret;
+}
+EXPORT_SYMBOL_GPL(phy_get_speed);
+
 /**
  * _of_phy_get() - lookup and obtain a reference to a phy by phandle
  * @np: device_node for which to get the phy
