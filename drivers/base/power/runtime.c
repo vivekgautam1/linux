@@ -1578,6 +1578,7 @@ void pm_runtime_get_suppliers(struct device *dev)
 
 	device_links_read_unlock(idx);
 }
+EXPORT_SYMBOL_GPL(pm_runtime_get_suppliers);
 
 /**
  * pm_runtime_put_suppliers - Drop references to supplier devices.
@@ -1596,6 +1597,7 @@ void pm_runtime_put_suppliers(struct device *dev)
 
 	device_links_read_unlock(idx);
 }
+EXPORT_SYMBOL_GPL(pm_runtime_put_suppliers);
 
 void pm_runtime_new_link(struct device *dev)
 {
