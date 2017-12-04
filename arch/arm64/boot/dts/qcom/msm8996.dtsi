@@ -309,6 +309,10 @@
 				#clock-cells = <1>;
 			};
 
+			interconnect-rpm {
+				compatible = "qcom,interconnect-rpm";
+			};
+
 			pm8994-regulators {
 				compatible = "qcom,rpm-pm8994-regulators";
 
