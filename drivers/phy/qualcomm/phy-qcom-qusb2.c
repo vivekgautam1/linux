@@ -317,6 +317,7 @@ void qcom_qusb2_phy_configure(void __iomem *base,
 static void qusb2_phy_set_tune2_param(struct qusb2_phy *qphy)
 {
 	struct device *dev = &qphy->phy->dev;
+	const struct qusb2_phy_cfg *cfg = qphy->cfg;
 	u8 *val;
 
 	/*
@@ -333,7 +334,7 @@ static void qusb2_phy_set_tune2_param(struct qusb2_phy *qphy)
 	}
 
 	/* Fused TUNE2 value is the higher nibble only */
-	qusb2_setbits(qphy->base, QUSB2PHY_PORT_TUNE2, val[0] << 0x4);
+	qusb2_setbits(qphy->base, cfg->regs[QUSB2PHY_PORT_TUNE2], val[0] << 0x4);
 }
 
 static int qusb2_phy_notify_speed(struct phy *phy, enum phy_speed speed)
