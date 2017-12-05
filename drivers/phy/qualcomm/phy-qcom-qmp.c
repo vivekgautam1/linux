@@ -599,7 +599,7 @@ struct qcom_qmp {
 	void __iomem *serdes;
 	void __iomem *dp_com;
 
-	struct clk_bulk_data *clks;
+	struct clk **clks;
 	struct reset_control **resets;
 	struct regulator_bulk_data *vregs;
 
@@ -840,10 +840,14 @@ static int qcom_qmp_phy_com_init(struct qcom_qmp *qmp)
 		}
 	}
 
-	ret = clk_bulk_prepare_enable(cfg->num_clks, qmp->clks);
-	if (ret) {
-		dev_err(qmp->dev, "failed to enable clks, err=%d\n", ret);
-		goto err_rst;
+	for (i = 0; i < qmp->cfg->num_clks; i++) {
+		ret = clk_prepare_enable(qmp->clks[i]);
+		if (ret) {
+			dev_err(qmp->dev, "failed to enable %s clk, err=%d\n",
+				qmp->cfg->clk_list[i], ret);
+			while (--i >= 0)
+				clk_disable_unprepare(qmp->clks[i]);
+		}
 	}
 
 	if (cfg->has_phy_com_ctrl)
@@ -896,7 +900,8 @@ static int qcom_qmp_phy_com_init(struct qcom_qmp *qmp)
 	return 0;
 
 err_com_init:
-	clk_bulk_disable_unprepare(cfg->num_clks, qmp->clks);
+	while (--i >= 0)
+		clk_disable_unprepare(qmp->clks[i]);
 err_rst:
 	while (++i < cfg->num_resets)
 		reset_control_assert(qmp->resets[i]);
@@ -931,7 +936,9 @@ static int qcom_qmp_phy_com_exit(struct qcom_qmp *qmp)
 	while (--i >= 0)
 		reset_control_assert(qmp->resets[i]);
 
-	clk_bulk_disable_unprepare(cfg->num_clks, qmp->clks);
+	i = cfg->num_clks;
+	while (--i >= 0)
+		clk_disable_unprepare(qmp->clks[i]);
 
 	regulator_bulk_disable(cfg->num_vregs, qmp->vregs);
 
@@ -1127,6 +1134,7 @@ static int __maybe_unused qcom_qmp_phy_runtime_suspend(struct device *dev)
 	struct qcom_qmp *qmp = dev_get_drvdata(dev);
 	struct qmp_phy *qphy = qmp->phys[0];
 	const struct qmp_phy_cfg *cfg = qmp->cfg;
+	int i = cfg->num_clks;
 
 	dev_vdbg(dev, "Suspending QMP phy, speed:%d\n", qmp->speed);
 
@@ -1142,7 +1150,9 @@ static int __maybe_unused qcom_qmp_phy_runtime_suspend(struct device *dev)
 	qcom_qmp_phy_enable_autonomous_mode(qphy);
 
 	clk_disable_unprepare(qphy->pipe_clk);
-	clk_bulk_disable_unprepare(cfg->num_clks, qmp->clks);
+
+	while (--i >= 0)
+		clk_disable_unprepare(qmp->clks[i]);
 
 	return 0;
 }
@@ -1152,7 +1162,7 @@ static int __maybe_unused qcom_qmp_phy_runtime_resume(struct device *dev)
 	struct qcom_qmp *qmp = dev_get_drvdata(dev);
 	struct qmp_phy *qphy = qmp->phys[0];
 	const struct qmp_phy_cfg *cfg = qmp->cfg;
-	int ret = 0;
+	int i, ret = 0;
 
 	dev_vdbg(dev, "Resuming QMP phy, speed:%d\n", qmp->speed);
 
@@ -1165,17 +1175,16 @@ static int __maybe_unused qcom_qmp_phy_runtime_resume(struct device *dev)
 		return 0;
 	}
 
-	ret = clk_bulk_prepare_enable(cfg->num_clks, qmp->clks);
-	if (ret) {
-		dev_err(qmp->dev, "failed to enable clks, err=%d\n", ret);
-		return ret;
-	}
+	for (i = 0; i < qmp->cfg->num_clks; i++) {
+		ret = clk_prepare_enable(qmp->clks[i]);
+		if (ret) {
+			dev_err(qmp->dev, "failed to enable %s clk, err=%d\n",
+				qmp->cfg->clk_list[i], ret);
+			while (--i >= 0)
+				clk_disable_unprepare(qmp->clks[i]);
 
-	ret = clk_prepare_enable(qphy->pipe_clk);
-	if (ret) {
-		dev_err(dev, "pipe_clk enable failed, err=%d\n", ret);
-		clk_bulk_disable_unprepare(cfg->num_clks, qmp->clks);
-		return ret;
+			return ret;
+		}
 	}
 
 	qcom_qmp_phy_disable_autonomous_mode(qphy);
@@ -1227,17 +1236,29 @@ static int qcom_qmp_phy_reset_init(struct device *dev)
 static int qcom_qmp_phy_clk_init(struct device *dev)
 {
 	struct qcom_qmp *qmp = dev_get_drvdata(dev);
-	int num = qmp->cfg->num_clks;
-	int i;
+	int ret, i;
 
-	qmp->clks = devm_kcalloc(dev, num, sizeof(*qmp->clks), GFP_KERNEL);
+	qmp->clks = devm_kcalloc(dev, qmp->cfg->num_clks,
+				 sizeof(*qmp->clks), GFP_KERNEL);
 	if (!qmp->clks)
 		return -ENOMEM;
 
-	for (i = 0; i < num; i++)
-		qmp->clks->id = qmp->cfg->clk_list[i];
+	for (i = 0; i < qmp->cfg->num_clks; i++) {
+		struct clk *_clk;
+		const char *name = qmp->cfg->clk_list[i];
 
-	return devm_clk_bulk_get(dev, num, qmp->clks);
+		_clk = devm_clk_get(dev, name);
+		if (IS_ERR(_clk)) {
+			ret = PTR_ERR(_clk);
+			if (ret != -EPROBE_DEFER)
+				dev_err(dev, "failed to get %s clk, %d\n",
+					name, ret);
+			return ret;
+		}
+		qmp->clks[i] = _clk;
+	}
+
+	return 0;
 }
 
 /*
