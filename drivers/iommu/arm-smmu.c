@@ -207,7 +207,8 @@ struct arm_smmu_device {
 	u32				num_global_irqs;
 	u32				num_context_irqs;
 	unsigned int			*irqs;
-	struct clk_bulk_data		*clocks;
+	//struct clk_bulk_data		*clocks;
+	struct clk                      **clocks;
 	int				num_clks;
 	const char * const		*clk_names;
 
@@ -1728,6 +1729,7 @@ static int arm_smmu_id_size_to_bits(int size)
 	}
 }
 
+#if 0
 static int arm_smmu_init_clocks(struct arm_smmu_device *smmu)
 {
 	int i;
@@ -1745,6 +1747,63 @@ static int arm_smmu_init_clocks(struct arm_smmu_device *smmu)
 		smmu->clocks->id = smmu->clk_names[i];
 
 	return devm_clk_bulk_get(smmu->dev, num, smmu->clocks);
+}
+#endif
+
+static int arm_smmu_enable_clocks(struct arm_smmu_device *smmu)
+{
+	int i, ret = 0;
+
+	for (i = 0; i < smmu->num_clks; ++i) {
+		ret = clk_prepare_enable(smmu->clocks[i]);
+		if (ret) {
+			dev_err(smmu->dev, "Couldn't enable %s clock\n",
+				smmu->clk_names[i]);
+			while (i--)
+				clk_disable_unprepare(smmu->clocks[i]);
+			break;
+		}
+	}
+
+	return ret;
+}
+
+static void arm_smmu_disable_clocks(struct arm_smmu_device *smmu)
+{
+	int i = smmu->num_clks;
+
+	while (i--)
+		clk_disable_unprepare(smmu->clocks[i]);
+}
+
+static int arm_smmu_init_clocks(struct arm_smmu_device *smmu)
+{
+	int i, err;
+	struct device *dev = smmu->dev;
+
+	if (smmu->num_clks < 1)
+		return 0;
+
+	smmu->clocks = devm_kcalloc(dev, smmu->num_clks,
+				    sizeof(*smmu->clocks), GFP_KERNEL);
+	if (!smmu->clocks)
+		return -ENOMEM;
+
+	for (i = 0; i < smmu->num_clks; i++) {
+		const char *cname = smmu->clk_names[i];
+		struct clk *c = devm_clk_get(dev, cname);
+
+		if (IS_ERR(c)) {
+			err = PTR_ERR(c);
+			if (err != -EPROBE_DEFER)
+				dev_err(dev, "Couldn't get clock: %s", cname);
+
+			return err;
+		}
+		smmu->clocks[i] = c;
+	}
+
+	return 0;
 }
 
 static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
@@ -2303,14 +2362,14 @@ static int __maybe_unused arm_smmu_runtime_resume(struct device *dev)
 {
 	struct arm_smmu_device *smmu = dev_get_drvdata(dev);
 
-	return clk_bulk_prepare_enable(smmu->num_clks, smmu->clocks);
+	return arm_smmu_enable_clocks(smmu);
 }
 
 static int __maybe_unused arm_smmu_runtime_suspend(struct device *dev)
 {
 	struct arm_smmu_device *smmu = dev_get_drvdata(dev);
 
-	clk_bulk_disable_unprepare(smmu->num_clks, smmu->clocks);
+	arm_smmu_disable_clocks(smmu);
 
 	return 0;
 }
