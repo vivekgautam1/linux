@@ -1229,7 +1229,7 @@ static struct clk_branch mmss_mmagic_ahb_clk = {
 			.name = "mmss_mmagic_ahb_clk",
 			.parent_names = (const char *[]){ "ahb_clk_src" },
 			.num_parents = 1,
-			.flags = CLK_SET_RATE_PARENT | CLK_IGNORE_UNUSED,
+			.flags = CLK_SET_RATE_PARENT | CLK_IS_CRITICAL,
 			.ops = &clk_branch2_ops,
 		},
 	},
@@ -1244,7 +1244,7 @@ static struct clk_branch mmss_mmagic_cfg_ahb_clk = {
 			.name = "mmss_mmagic_cfg_ahb_clk",
 			.parent_names = (const char *[]){ "ahb_clk_src" },
 			.num_parents = 1,
-			.flags = CLK_SET_RATE_PARENT,
+			.flags = CLK_SET_RATE_PARENT | CLK_IS_CRITICAL,
 			.ops = &clk_branch2_ops,
 		},
 	},
@@ -1303,7 +1303,7 @@ static struct clk_branch mmagic_camss_axi_clk = {
 			.name = "mmagic_camss_axi_clk",
 			.parent_names = (const char *[]){ "axi_clk_src" },
 			.num_parents = 1,
-			.flags = CLK_SET_RATE_PARENT,
+			.flags = CLK_SET_RATE_PARENT | CLK_IS_CRITICAL,
 			.ops = &clk_branch2_ops,
 		},
 	},
@@ -1318,7 +1318,7 @@ static struct clk_branch mmagic_camss_noc_cfg_ahb_clk = {
 			.name = "mmagic_camss_noc_cfg_ahb_clk",
 			.parent_names = (const char *[]){ "gcc_mmss_noc_cfg_ahb_clk" },
 			.num_parents = 1,
-			.flags = CLK_SET_RATE_PARENT,
+			.flags = CLK_SET_RATE_PARENT | CLK_IS_CRITICAL,
 			.ops = &clk_branch2_ops,
 		},
 	},
@@ -1423,7 +1423,7 @@ static struct clk_branch mmagic_mdss_axi_clk = {
 			.name = "mmagic_mdss_axi_clk",
 			.parent_names = (const char *[]){ "axi_clk_src" },
 			.num_parents = 1,
-			.flags = CLK_SET_RATE_PARENT,
+			.flags = CLK_SET_RATE_PARENT | CLK_IS_CRITICAL,
 			.ops = &clk_branch2_ops,
 		},
 	},
@@ -1438,7 +1438,7 @@ static struct clk_branch mmagic_mdss_noc_cfg_ahb_clk = {
 			.name = "mmagic_mdss_noc_cfg_ahb_clk",
 			.parent_names = (const char *[]){ "gcc_mmss_noc_cfg_ahb_clk" },
 			.num_parents = 1,
-			.flags = CLK_SET_RATE_PARENT,
+			.flags = CLK_SET_RATE_PARENT | CLK_IS_CRITICAL,
 			.ops = &clk_branch2_ops,
 		},
 	},
@@ -1513,7 +1513,7 @@ static struct clk_branch mmagic_video_axi_clk = {
 			.name = "mmagic_video_axi_clk",
 			.parent_names = (const char *[]){ "axi_clk_src" },
 			.num_parents = 1,
-			.flags = CLK_SET_RATE_PARENT,
+			.flags = CLK_SET_RATE_PARENT | CLK_IS_CRITICAL,
 			.ops = &clk_branch2_ops,
 		},
 	},
@@ -1528,7 +1528,7 @@ static struct clk_branch mmagic_video_noc_cfg_ahb_clk = {
 			.name = "mmagic_video_noc_cfg_ahb_clk",
 			.parent_names = (const char *[]){ "gcc_mmss_noc_cfg_ahb_clk" },
 			.num_parents = 1,
-			.flags = CLK_SET_RATE_PARENT,
+			.flags = CLK_SET_RATE_PARENT | CLK_IS_CRITICAL,
 			.ops = &clk_branch2_ops,
 		},
 	},
@@ -2894,6 +2894,7 @@ static struct gdsc mmagic_bimc_gdsc = {
 		.name = "mmagic_bimc",
 	},
 	.pwrsts = PWRSTS_OFF_ON,
+	.flags = VOTABLE | ALWAYS_ON,
 };
 
 static struct gdsc mmagic_video_gdsc = {
@@ -2903,7 +2904,7 @@ static struct gdsc mmagic_video_gdsc = {
 		.name = "mmagic_video",
 	},
 	.pwrsts = PWRSTS_OFF_ON,
-	.flags = VOTABLE,
+	.flags = VOTABLE | ALWAYS_ON,
 };
 
 static struct gdsc mmagic_mdss_gdsc = {
@@ -2913,7 +2914,7 @@ static struct gdsc mmagic_mdss_gdsc = {
 		.name = "mmagic_mdss",
 	},
 	.pwrsts = PWRSTS_OFF_ON,
-	.flags = VOTABLE,
+	.flags = VOTABLE | ALWAYS_ON,
 };
 
 static struct gdsc mmagic_camss_gdsc = {
@@ -2923,7 +2924,7 @@ static struct gdsc mmagic_camss_gdsc = {
 		.name = "mmagic_camss",
 	},
 	.pwrsts = PWRSTS_OFF_ON,
-	.flags = VOTABLE,
+	.flags = VOTABLE | ALWAYS_ON,
 };
 
 static struct gdsc venus_gdsc = {
@@ -3038,16 +3039,6 @@ static struct gdsc mdss_gdsc = {
 	.pwrsts = PWRSTS_OFF_ON,
 };
 
-static struct gdsc gpu_gdsc = {
-	.gdscr = 0x4034,
-	.gds_hw_ctrl = 0x4038,
-	.pd = {
-		.name = "gpu",
-	},
-	.pwrsts = PWRSTS_OFF_ON,
-	.flags = VOTABLE,
-};
-
 static struct gdsc gpu_gx_gdsc = {
 	.gdscr = 0x4024,
 	.clamp_io_ctrl = 0x4300,
@@ -3058,6 +3049,17 @@ static struct gdsc gpu_gx_gdsc = {
 	},
 	.pwrsts = PWRSTS_OFF_ON,
 	.flags = CLAMP_IO,
+};
+
+static struct gdsc gpu_gdsc = {
+	.gdscr = 0x4034,
+	.gds_hw_ctrl = 0x4038,
+	.pd = {
+		.name = "gpu",
+	},
+	.parent = &gpu_gx_gdsc.pd,
+	.pwrsts = PWRSTS_OFF_ON,
+	.flags = VOTABLE,
 };
 
 static struct clk_regmap *mmcc_msm8996_clocks[] = {
