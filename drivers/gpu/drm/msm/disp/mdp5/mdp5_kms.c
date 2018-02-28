@@ -16,6 +16,7 @@
  * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <linux/interconnect.h>
 #include <linux/of_irq.h>
 
 #include "msm_drv.h"
@@ -1001,6 +1002,13 @@ static const struct component_ops mdp5_ops = {
 
 static int mdp5_dev_probe(struct platform_device *pdev)
 {
+	struct icc_path *path = of_icc_get(&pdev->dev, "ddr");
+
+	if (IS_ERR(path))
+		return PTR_ERR(path);
+
+	icc_set(path, 0, 6400000);
+
 	DBG("");
 	return component_add(&pdev->dev, &mdp5_ops);
 }
