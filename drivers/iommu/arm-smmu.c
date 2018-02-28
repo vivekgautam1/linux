@@ -1223,11 +1223,16 @@ static int arm_smmu_attach_dev(struct iommu_domain *domain, struct device *dev)
 		dev_err(dev,
 			"cannot attach to SMMU %s whilst already attached to domain on SMMU %s\n",
 			dev_name(smmu_domain->smmu->dev), dev_name(smmu->dev));
-		return -EINVAL;
+		ret = -EINVAL;
+		goto destroy_domain;
 	}
 
 	/* Looks ok, so add the device to the domain */
 	return arm_smmu_domain_add_master(smmu_domain, fwspec);
+
+destroy_domain:
+	arm_smmu_destroy_domain_context(domain);
+	return ret;
 }
 
 static int arm_smmu_map(struct iommu_domain *domain, unsigned long iova,
