@@ -8,6 +8,7 @@
 #define _LINUX_INTERCONNECT_H
 
 #include <linux/mutex.h>
+#include <linux/of.h>
 #include <linux/types.h>
 
 struct icc_path;
@@ -17,6 +18,7 @@ struct device;
 
 struct icc_path *icc_get(struct device *dev, const int src_id,
 			 const int dst_id);
+struct icc_path *of_icc_get(struct device *dev, const char *name);
 void icc_put(struct icc_path *path);
 int icc_set(struct icc_path *path, u32 avg_bw, u32 peak_bw);
 
@@ -24,6 +26,12 @@ int icc_set(struct icc_path *path, u32 avg_bw, u32 peak_bw);
 
 static inline struct icc_path *icc_get(struct device *dev, const int src_id,
 				       const int dst_id)
+{
+	return NULL;
+}
+
+static inline struct icc_path *of_icc_get(struct device *dev,
+					  const char *name)
 {
 	return NULL;
 }

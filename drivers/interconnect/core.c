@@ -16,6 +16,7 @@
 #include <linux/module.h>
 #include <linux/mutex.h>
 #include <linux/slab.h>
+#include <linux/of.h>
 #include <linux/uaccess.h>
 
 static DEFINE_IDR(icc_idr);
@@ -310,6 +311,46 @@ static int constraints_apply(struct icc_path *path)
 
 	return 0;
 }
+
+struct icc_path *of_icc_get(struct device *dev, const char *name)
+{
+	struct device_node *np = NULL;
+	u32 src_id, dst_id;
+	int index = 0;
+	int ret;
+
+	if (dev->of_node)
+		np = dev->of_node;
+
+	if (name) {
+		index = of_property_match_string(np, "interconnect-names", name);
+		if (index < 0)
+			return ERR_PTR(index);
+	}
+
+	/*
+	 * We use a combination of phandle and specifier for endpoint. For now
+	 * lets support only global ids and extend this is the future if needed
+	 * without breaking DT compatibility.
+	 */
+	ret = of_property_read_u32_index(np, "interconnects", index * 4 + 1,
+					 &src_id);
+	if (ret) {
+		pr_err("%s: %s src port is invalid (%d)\n", __func__, np->name,
+		       ret);
+		return ERR_PTR(ret);
+	}
+	ret = of_property_read_u32_index(np, "interconnects", index * 4 + 3,
+					 &dst_id);
+	if (ret) {
+		pr_err("%s: %s dst port is invalid (%d)\n", __func__, np->name,
+		       ret);
+		return ERR_PTR(ret);
+	}
+
+	return icc_get(dev, src_id, dst_id);
+}
+EXPORT_SYMBOL_GPL(of_icc_get);
 
 /**
  * icc_set() - set constraints on an interconnect path between two endpoints
