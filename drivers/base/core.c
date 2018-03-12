@@ -145,6 +145,30 @@ static int device_reorder_to_tail(struct device *dev, void *not_used)
 }
 
 /**
+ * device_link_find - find any existing link between two devices.
+ * @consumer: Consumer end of the link.
+ * @supplier: Supplier end of the link.
+ *
+ * Returns pointer to the existing link between a supplier and
+ * and consumer devices, or NULL if no link exists.
+ */
+struct device_link *device_link_find(struct device *consumer,
+				     struct device *supplier)
+{
+	struct device_link *link = NULL;
+
+	if (!consumer || !supplier)
+		return NULL;
+
+	list_for_each_entry(link, &supplier->links.consumers, s_node)
+		if (link->consumer == consumer)
+			break;
+
+	return link;
+}
+EXPORT_SYMBOL_GPL(device_link_find);
+
+/**
  * device_link_add - Create a link between two devices.
  * @consumer: Consumer end of the link.
  * @supplier: Supplier end of the link.
@@ -195,9 +219,9 @@ struct device_link *device_link_add(struct device *consumer,
 		goto out;
 	}
 
-	list_for_each_entry(link, &supplier->links.consumers, s_node)
-		if (link->consumer == consumer)
-			goto out;
+	link = device_link_find(consumer, supplier);
+	if (link)
+		goto out;
 
 	link = kzalloc(sizeof(*link), GFP_KERNEL);
 	if (!link)
