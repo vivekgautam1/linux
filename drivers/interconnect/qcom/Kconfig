@@ -15,3 +15,9 @@ config INTERCONNECT_QCOM_MSM8996
 	depends on INTERCONNECT_QCOM
 	help
 	  This is a driver for the Qualcomm Network-on-Chip on msm8996-based platforms.
+
+config INTERCONNECT_QCOM_SDM845
+	tristate "Qualcomm SDM845 interconnect driver"
+	depends on INTERCONNECT_QCOM
+	help
+	  This is a driver for the Qualcomm Network-on-Chip on sdm845-based platforms.
