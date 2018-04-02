@@ -895,6 +895,9 @@
 
 				iommus = <&apps_iommu 4>;
 
+				interconnects = <&snoc 22 &bimc 512>;
+				interconnect-names = "ddr";
+
 				ports {
 					#address-cells = <1>;
 					#size-cells = <0>;
