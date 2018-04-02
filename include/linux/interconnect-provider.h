@@ -18,6 +18,7 @@ struct icc_node;
  * @provider_list: list of the registered interconnect providers
  * @nodes: internal list of the interconnect provider nodes
  * @set: pointer to device specific set operation function
+ * @aggregate: pointer to device specific aggregate operation function
  * @dev: the device this interconnect provider belongs to
  * @lock: lock to provide consistency during aggregation/update of constraints
  * @users: count of active users
@@ -28,6 +29,8 @@ struct icc_provider {
 	struct list_head	nodes;
 	int (*set)(struct icc_node *src, struct icc_node *dst,
 		   u32 avg_bw, u32 peak_bw);
+	int (*aggregate)(struct icc_node *node, u32 avg_bw, u32 peak_bw,
+			 u32 *agg_avg, u32 *agg_peak);
 	struct device		*dev;
 	struct mutex		lock;
 	int			users;

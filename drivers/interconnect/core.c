@@ -239,20 +239,13 @@ static int path_init(struct device *dev, struct icc_path *path)
 	return 0;
 }
 
-static void node_aggregate(struct icc_node *node)
+static int aggregate(struct icc_node *node, u32 avg_bw, u32 peak_bw,
+		     u32 *agg_avg, u32 *agg_peak)
 {
-	struct icc_req *r;
-	u32 agg_avg = 0;
-	u32 agg_peak = 0;
+	*agg_avg += node->avg_bw + avg_bw;
+	*agg_peak = max(node->peak_bw, peak_bw);
 
-	hlist_for_each_entry(r, &node->req_list, req_node) {
-		/* sum(averages) and max(peaks) */
-		agg_avg += r->avg_bw;
-		agg_peak = max(agg_peak, r->peak_bw);
-	}
-
-	node->avg_bw = agg_avg;
-	node->peak_bw = agg_peak;
+	return 0;
 }
 
 static void provider_aggregate(struct icc_provider *provider, u32 *avg_bw,
@@ -264,9 +257,12 @@ static void provider_aggregate(struct icc_provider *provider, u32 *avg_bw,
 
 	/* aggregate for the interconnect provider */
 	list_for_each_entry(n, &provider->nodes, node_list) {
-		/* sum the average and max the peak */
-		agg_avg += n->avg_bw;
-		agg_peak = max(agg_peak, n->peak_bw);
+		if (provider->aggregate)
+			provider->aggregate(n, agg_avg, agg_peak,
+					    &agg_avg, &agg_peak);
+		else
+			aggregate(n, agg_avg, agg_peak,
+				  &agg_avg, &agg_peak);
 	}
 
 	*avg_bw = agg_avg;
@@ -330,6 +326,7 @@ static int constraints_apply(struct icc_path *path)
 int icc_set(struct icc_path *path, u32 avg_bw, u32 peak_bw)
 {
 	struct icc_node *node;
+	struct icc_provider *p;
 	size_t i;
 	int ret;
 
@@ -337,7 +334,12 @@ int icc_set(struct icc_path *path, u32 avg_bw, u32 peak_bw)
 		return 0;
 
 	for (i = 0; i < path->num_nodes; i++) {
+		struct icc_req *r;
+		u32 agg_avg = 0;
+		u32 agg_peak = 0;
+
 		node = path->reqs[i].node;
+		p = node->provider;
 
 		mutex_lock(&icc_path_mutex);
 
@@ -346,7 +348,22 @@ int icc_set(struct icc_path *path, u32 avg_bw, u32 peak_bw)
 		path->reqs[i].peak_bw = peak_bw;
 
 		/* aggregate requests for this node */
-		node_aggregate(node);
+		if (p->aggregate) {
+			hlist_for_each_entry(r, &node->req_list, req_node) {
+				p->aggregate(node, r->avg_bw, r->peak_bw,
+						  &agg_avg, &agg_peak);
+			}
+			node->avg_bw = agg_avg;
+			node->peak_bw = agg_peak;
+		} else {
+			hlist_for_each_entry(r, &node->req_list, req_node) {
+				/* sum(averages) and max(peaks) */
+				agg_avg += r->avg_bw;
+				agg_peak = max(agg_peak, r->peak_bw);
+			}
+			node->avg_bw = agg_avg;
+			node->peak_bw = agg_peak;
+		}
 
 		mutex_unlock(&icc_path_mutex);
 	}
