@@ -7,6 +7,9 @@
 
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/qcom,gcc-sdm845.h>
+#include <dt-bindings/soc/qcom,rpmh-rsc.h>
+#include <dt-bindings/clock/qcom,rpmh.h>
+#include <dt-bindings/regulator/qcom,rpmh-regulator.h>
 
 / {
 	interrupt-parent = <&intc>;
@@ -20,6 +23,17 @@
 		device_type = "memory";
 		/* We expect the bootloader to fill in the size */
 		reg = <0 0x80000000 0 0>;
+	};
+
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		memory@85fe0000 {
+			reg = <0x0 0x85fe0000 0x0 0x20000>;
+			compatible = "qcom,cmd-db";
+		};
 	};
 
 	cpus {
@@ -338,6 +352,73 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
+			};
+		};
+
+		apps_rsc: rsc@179e000 {
+			label = "apps_rsc";
+			compatible = "qcom,rpmh-rsc";
+			reg = <0x179e0000 0xd00>, <0x179e0d00 0x3000>;
+			reg-names = "drv", "tcs";
+			interrupts = <GIC_SPI 5 IRQ_TYPE_LEVEL_HIGH>;
+			qcom,drv-id = <2>;
+			qcom,tcs-config = <SLEEP_TCS   3>,
+					  <WAKE_TCS    3>,
+					  <ACTIVE_TCS  2>,
+					  <CONTROL_TCS 1>;
+
+			rpmhcc: clock-controller {
+				compatible = "qcom,rpmh-clk-sdm845";
+				#clock-cells = <1>;
+			};
+
+			pm8998-rpmh-regulators {
+				compatible = "qcom,pm8998-rpmh-regulators";
+				qcom,pmic-id = "a";
+
+				vdd_l7_l12_l14_l15-supply = <&pm8998_s5>;
+
+				smps2 {
+					regulator-min-microvolt = <1100000>;
+					regulator-max-microvolt = <1100000>;
+					qcom,regulator-initial-voltage = <1100000>;
+				};
+
+				pm8998_s5: smps5 {
+					regulator-min-microvolt = <1904000>;
+					regulator-max-microvolt = <2040000>;
+					qcom,regulator-initial-voltage = <1904000>;
+				};
+
+				ldo7 {
+					regulator-min-microvolt = <1800000>;
+					regulator-max-microvolt = <1800000>;
+					qcom,regulator-initial-voltage = <1800000>;
+					qcom,headroom-voltage = <56000>;
+					regulator-initial-mode = <RPMH_REGULATOR_MODE_LPM>;
+					regulator-allow-set-load;
+					qcom,allowed-modes =
+						<RPMH_REGULATOR_MODE_LPM
+						RPMH_REGULATOR_MODE_HPM>;
+					qcom,mode-threshold-currents = <0 10000>;
+				};
+
+				lvs1 {
+					regulator-min-microvolt = <1800000>;
+					regulator-max-microvolt = <1800000>;
+				};
+			};
+
+			pmi8998-rpmh-regulators {
+				compatible = "qcom,pmi8998-rpmh-regulators";
+				qcom,pmic-id = "b";
+
+				bob {
+					regulator-min-microvolt = <3312000>;
+					regulator-max-microvolt = <3600000>;
+					qcom,regulator-initial-voltage = <3312000>;
+					regulator-initial-mode = <RPMH_REGULATOR_MODE_PASS>;
+				};
 			};
 		};
 	};
