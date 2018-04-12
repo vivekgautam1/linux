@@ -11,14 +11,14 @@
 #include <linux/of.h>
 #include <linux/of_device.h>
 #include <linux/platform_device.h>
-#include <linux/regmap.h>
+//#include <linux/regmap.h>
 #include <soc/qcom/cmd-db.h>
 #include <soc/qcom/rpmh.h>
 
 #include <dt-bindings/clock/qcom,rpmh.h>
 
 #include "common.h"
-#include "clk-regmap.h"
+//#include "clk-regmap.h"
 
 #define CLK_RPMH_ARC_EN_OFFSET 0
 #define CLK_RPMH_VRM_EN_OFFSET 4
@@ -138,7 +138,7 @@ static int clk_rpmh_send_aggregate_command(struct clk_rpmh *c)
 		ret = rpmh_write_async(c->rpmh_client,
 				       RPMH_WAKE_ONLY_STATE, &cmd, 1);
 		if (ret) {
-			pr_err("%s: rpmh_write_async(%s, state=%d) failed (%d)\n"
+			pr_err("%s: rpmh_write_async(%s, state=%d) failed (%d)\n",
 			       __func__, c->res_name, RPMH_WAKE_ONLY_STATE,
 				 ret);
 			return ret;
@@ -167,15 +167,17 @@ static int clk_rpmh_send_aggregate_command(struct clk_rpmh *c)
 static int clk_rpmh_aggregate_state_send_command(struct clk_rpmh *c,
 						bool enable)
 {
+	int ret;
+
 	/* Update state and aggregate state values based on enable value. */
 	c->state = enable ? c->valid_state_mask : 0;
 	c->aggr_state = c->state | c->peer->state;
 	c->peer->aggr_state = c->aggr_state;
 
 	ret = clk_rpmh_send_aggregate_command(c);
-	if (ret && enable)
+	if (ret && enable) {
 		c->state = 0;
-	else if (ret) {
+	} else if (ret) {
 		c->state = c->valid_state_mask;
 		WARN(1, "clk: %s failed to disable\n", c->res_name);
 	}
@@ -253,8 +255,8 @@ DEFINE_CLK_RPMH_VRM(sdm845, rf_clk3, rf_clk3_ao, "rfclka3",
 		    CLK_RPMH_APPS_RSC_AO_STATE_MASK);
 
 static struct clk_hw *sdm845_rpmh_clocks[] = {
-	[RPMH_CXO_CLK]		= &sdm845_bi_tcxo.hw,
-	[RPMH_CXO_CLK_A]	= &sdm845_bi_tcxo_ao.hw,
+//	[RPMH_CXO_CLK]		= &sdm845_bi_tcxo.hw,
+//	[RPMH_CXO_CLK_A]	= &sdm845_bi_tcxo_ao.hw,
 	[RPMH_LN_BB_CLK2]	= &sdm845_ln_bb_clk2.hw,
 	[RPMH_LN_BB_CLK2_A]	= &sdm845_ln_bb_clk2_ao.hw,
 	[RPMH_LN_BB_CLK3]	= &sdm845_ln_bb_clk3.hw,
@@ -289,7 +291,6 @@ static int clk_rpmh_probe(struct platform_device *pdev)
 	struct clk_hw **hw_clks;
 	struct clk_rpmh *rpmh_clk;
 	const struct clk_rpmh_desc *desc;
-	struct property *prop;
 	struct rpmh_client *rpmh_client = NULL;
 
 	desc = of_device_get_match_data(&pdev->dev);
@@ -333,6 +334,9 @@ static int clk_rpmh_probe(struct platform_device *pdev)
 	data->clk_num = num_clks;
 
 	for (i = 0; i < num_clks; i++) {
+		if (!hw_clks[i])
+			continue;
+
 		rpmh_clk = to_clk_rpmh(hw_clks[i]);
 		rpmh_clk->res_addr = cmd_db_read_addr(rpmh_clk->res_name);
 		if (!rpmh_clk->res_addr) {
@@ -346,6 +350,7 @@ static int clk_rpmh_probe(struct platform_device *pdev)
 
 		clk = devm_clk_register(&pdev->dev, hw_clks[i]);
 		if (IS_ERR(clk)) {
+			dev_err(&pdev->dev, "failed to register %s\n", hw_clks[i]->init->name);
 			ret = PTR_ERR(clk);
 			goto err;
 		}
@@ -355,8 +360,10 @@ static int clk_rpmh_probe(struct platform_device *pdev)
 
 	ret = of_clk_add_provider(pdev->dev.of_node, of_clk_src_onecell_get,
 				  data);
-	if (ret)
+	if (ret) {
+		dev_err(&pdev->dev, "failed to add clock provider\n");
 		goto err;
+	}
 
 	dev_info(&pdev->dev, "Registered RPMh clocks\n");
 	return ret;
