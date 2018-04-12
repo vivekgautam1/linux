@@ -429,7 +429,7 @@ static int find_free_tcs(struct tcs_group *tcs)
 
 	for (m = 0; m < tcs->num_tcs; m++) {
 		if (tcs_is_free(tcs->drv, tcs->offset + m))
-			return m;
+			return tcs->offset + m;
 	}
 
 	return -EBUSY;
@@ -467,7 +467,6 @@ static int tcs_mbox_write(struct rsc_drv *drv, const struct tcs_request *msg)
 		ret = PTR_ERR(resp);
 		goto done_write;
 	}
-	resp->m = m;
 
 	set_bit(m, drv->tcs_in_use);
 	__tcs_buffer_write(drv, m, 0, msg);

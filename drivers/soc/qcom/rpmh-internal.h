@@ -30,7 +30,6 @@ struct rsc_drv;
 struct tcs_response {
 	struct rsc_drv *drv;
 	const struct tcs_request *msg;
-	u32 m;
 	int err;
 	struct list_head list;
 };
