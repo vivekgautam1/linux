@@ -399,6 +399,12 @@
 			};
 		};
 
+		apss_shared: mailbox@17990000 {
+			compatible = "qcom,sdm845-apss-shared";
+			reg = <0x17990000 0x1000>;
+			#mbox-cells = <1>;
+		};
+
 		apps_rsc: rsc@179e000 {
 			label = "apps_rsc";
 			compatible = "qcom,rpmh-rsc";
