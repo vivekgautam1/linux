@@ -252,6 +252,12 @@
 		method = "smc";
 	};
 
+	firmware {
+		scm {
+			compatible = "qcom,scm-msm8998";
+		};
+	};
+
 	rpm_glink: rpm-glink {
 		compatible = "qcom,glink-rpm";
 
