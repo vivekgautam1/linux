@@ -488,6 +488,16 @@
 		reg = <0x100000 0xb0000>;
 	};
 
+	tlmm: pinctrl@3400000 {
+		compatible = "qcom,msm8998-pinctrl";
+		reg = <0x3400000 0xc00000>;
+		interrupts = <GIC_SPI 208 IRQ_TYPE_LEVEL_HIGH>;
+		gpio-controller;
+		#gpio-cells = <0x2>;
+		interrupt-controller;
+		#interrupt-cells = <0x2>;
+	};
+
 	tsens0: thermal@10aa000 {
 		compatible = "qcom,msm8998-tsens";
 		reg = <0x10aa000 0x2000>;
