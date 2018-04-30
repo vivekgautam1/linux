@@ -30,9 +30,24 @@
 		#size-cells = <2>;
 		ranges;
 
+		memory@85fc0000 {
+			reg = <0 0x85fc0000 0 0x20000>;
+			no-map;
+		};
+
 		memory@85fe0000 {
 			reg = <0x0 0x85fe0000 0x0 0x20000>;
 			compatible = "qcom,cmd-db";
+		};
+
+		smem_mem: memory@86000000 {
+			reg = <0x0 0x86000000 0x0 0x200000>;
+			no-map;
+		};
+
+		memory@86200000 {
+			reg = <0 0x86200000 0 0x2d00000>;
+			no-map;
 		};
 	};
 
@@ -160,6 +175,18 @@
 			#clock-cells = <0>;
 			clock-frequency = <32764>;
 		};
+	};
+
+	tcsr_mutex: hwlock {
+		compatible = "qcom,tcsr-mutex";
+		syscon = <&tcsr_mutex_regs 0 0x1000>;
+		#hwlock-cells = <1>;
+	};
+
+	smem {
+		compatible = "qcom,smem";
+		memory-region = <&smem_mem>;
+		hwlocks = <&tcsr_mutex 3>;
 	};
 
 	psci {
@@ -556,6 +583,11 @@
 			reset-names = "core_reset";
 
 			status = "disabled";
+		};
+
+		tcsr_mutex_regs: syscon@1f40000 {
+			compatible = "syscon";
+			reg = <0x1f40000 0x40000>;
 		};
 	};
 };
