@@ -41,6 +41,8 @@
  * if the IOMMU page table format is equivalent.
  */
 #define IOMMU_PRIV	(1 << 5)
+/* Don't use inner caches */
+#define IOMMU_NO_IC	(1 << 6)
 
 struct iommu_ops;
 struct iommu_group;
@@ -125,6 +127,7 @@ enum iommu_attr {
 	DOMAIN_ATTR_FSL_PAMUV1,
 	DOMAIN_ATTR_NESTING,	/* two stages of translation */
 	DOMAIN_ATTR_DMA_USE_FLUSH_QUEUE,
+	DOMAIN_ATTR_NO_IC,
 	DOMAIN_ATTR_MAX,
 };
 

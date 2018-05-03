@@ -354,6 +354,9 @@ int dma_info_to_prot(enum dma_data_direction dir, bool coherent,
 {
 	int prot = coherent ? IOMMU_CACHE : 0;
 
+	if (!coherent && (attrs & DOMAIN_ATTR_NO_IC))
+		prot |= IOMMU_NO_IC;
+
 	if (attrs & DMA_ATTR_PRIVILEGED)
 		prot |= IOMMU_PRIV;
 
