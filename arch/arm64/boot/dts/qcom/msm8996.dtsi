@@ -1380,7 +1380,7 @@
 		};
 
 		adreno_smmu: arm,smmu@b40000 {
-			compatible = "qcom,msm8996-smmu-v2";
+			compatible = "qcom,msm8996-smmu-v2", "qcom,smmu-v2";
 			reg = <0xb40000 0x10000>;
 
 			#global-interrupts = <1>;
@@ -1445,7 +1445,7 @@
 		};
 
 		mdp_smmu: arm,smmu@d00000 {
-			compatible = "qcom,msm8996-smmu-v2";
+			compatible = "qcom,msm8996-smmu-v2", "qcom,smmu-v2";
 			reg = <0xd00000 0x10000>;
 
 			#global-interrupts = <1>;
@@ -1656,7 +1656,7 @@
 		};
 
 	        lpass_q6_smmu: arm,smmu-lpass_q6@1600000 {
-			compatible = "qcom,msm8996-smmu-v2";
+			compatible = "qcom,msm8996-smmu-v2", "qcom,smmu-v2";
 	                reg = <0x1600000 0x20000>;
 	                #iommu-cells = <1>;
                         power-domains = <&gcc HLOS1_VOTE_LPASS_CORE_GDSC>;
