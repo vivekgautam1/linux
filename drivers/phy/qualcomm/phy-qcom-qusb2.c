@@ -319,6 +319,13 @@ static int qusb2_phy_init(struct phy *phy)
 
 	dev_vdbg(&phy->dev, "%s(): Initializing QUSB2 phy\n", __func__);
 
+	/* Perform phy reset */
+	ret = reset_control_assert(qphy->phy_reset);
+	if (ret) {
+		dev_err(&phy->dev, "failed to assert phy_reset, %d\n", ret);
+		goto disable_ahb_clk;
+	}
+
 	/* turn on regulator supplies */
 	ret = regulator_bulk_enable(ARRAY_SIZE(qphy->vregs), qphy->vregs);
 	if (ret)
@@ -335,13 +342,6 @@ static int qusb2_phy_init(struct phy *phy)
 	if (ret) {
 		dev_err(&phy->dev, "failed to enable cfg ahb clock, %d\n", ret);
 		goto disable_iface_clk;
-	}
-
-	/* Perform phy reset */
-	ret = reset_control_assert(qphy->phy_reset);
-	if (ret) {
-		dev_err(&phy->dev, "failed to assert phy_reset, %d\n", ret);
-		goto disable_ahb_clk;
 	}
 
 	/* 100 us delay to keep PHY in reset mode */
@@ -371,6 +371,8 @@ static int qusb2_phy_init(struct phy *phy)
 	/* Enable the PHY */
 	qusb2_clrbits(qphy->base, cfg->regs[QUSB2PHY_PORT_POWERDOWN],
 		      POWER_DOWN);
+	qusb2_setbits(qphy->base, cfg->regs[QUSB2PHY_PORT_POWERDOWN],
+		      CLAMP_N_EN);
 
 	/* Required to get phy pll lock successfully */
 	usleep_range(150, 160);
@@ -403,6 +405,7 @@ static int qusb2_phy_init(struct phy *phy)
 	}
 
 	if (!qphy->has_se_clk_scheme) {
+		dev_err(&phy->dev, "********* Have CMOS refclk\n");
 		ret = clk_prepare_enable(qphy->ref_clk);
 		if (ret) {
 			dev_err(&phy->dev, "failed to enable ref clk, %d\n",
@@ -412,10 +415,13 @@ static int qusb2_phy_init(struct phy *phy)
 	}
 
 	if (cfg->has_pll_test) {
-		if (!qphy->has_se_clk_scheme)
+		if (!qphy->has_se_clk_scheme) {
+			dev_err(&phy->dev, "********* Have CMOS refclk ------> clearing \n");
 			val &= ~CLK_REF_SEL;
-		else
+		} else {
+			dev_err(&phy->dev, "********* Have SE refclk ------> setting \n");
 			val |= CLK_REF_SEL;
+		}
 
 		writel(val, qphy->base + QUSB2PHY_PLL_TEST);
 
