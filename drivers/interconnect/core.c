@@ -48,6 +48,7 @@ struct icc_req {
  * @reqs: array of the requests applicable to this path of nodes
  */
 struct icc_path {
+	u8 tag;
 	size_t num_nodes;
 	struct icc_req reqs[];
 };
@@ -229,7 +230,7 @@ out:
  * averages and the peak will be the highest of all peak bandwidth requests.
  */
 
-static int aggregate_requests(struct icc_node *node)
+static int aggregate_requests(struct icc_node *node, u8 tag)
 {
 	struct icc_provider *p = node->provider;
 	struct icc_req *r;
@@ -238,13 +239,13 @@ static int aggregate_requests(struct icc_node *node)
 	node->peak_bw = 0;
 
 	hlist_for_each_entry(r, &node->req_list, req_node)
-		p->aggregate(node, r->avg_bw, r->peak_bw,
+		p->aggregate(node, tag, r->avg_bw, r->peak_bw,
 			     &node->avg_bw, &node->peak_bw);
 
 	return 0;
 }
 
-static void aggregate_provider(struct icc_provider *p)
+static void aggregate_provider(struct icc_provider *p, u8 tag)
 {
 	struct icc_node *n;
 
@@ -252,7 +253,7 @@ static void aggregate_provider(struct icc_provider *p)
 	p->peak_bw = 0;
 
 	list_for_each_entry(n, &p->nodes, node_list)
-		p->aggregate(n, n->avg_bw, n->peak_bw,
+		p->aggregate(n, tag, n->avg_bw, n->peak_bw,
 			     &p->avg_bw, &p->peak_bw);
 }
 
@@ -275,7 +276,7 @@ static int apply_constraints(struct icc_path *path)
 
 		p = next->provider;
 
-		aggregate_provider(p);
+		aggregate_provider(p, path->tag);
 
 		/* set the constraints */
 		ret = p->set(prev, next, p->avg_bw, p->peak_bw);
@@ -348,6 +349,23 @@ struct icc_path *of_icc_get(struct device *dev, const char *name)
 EXPORT_SYMBOL_GPL(of_icc_get);
 
 /**
+ * icc_set_tag() - set tag on a path
+ * @path: the path we want to tag
+ * @tag: the tag value
+ *
+ * This function allows consumers to append a tag to the path, so that a
+ * different aggregation could be done based on this tag.
+ */
+void icc_set_tag(struct icc_path *path, u8 tag)
+{
+	if (!path)
+		return;
+
+	path->tag = tag;
+}
+EXPORT_SYMBOL_GPL(icc_set_tag);
+
+/**
  * icc_set() - set constraints on an interconnect path between two endpoints
  * @path: reference to the path returned by icc_get()
  * @avg_bw: average bandwidth in kbps
@@ -383,7 +401,7 @@ int icc_set(struct icc_path *path, u32 avg_bw, u32 peak_bw)
 		path->reqs[i].peak_bw = peak_bw;
 
 		/* aggregate requests for this node */
-		aggregate_requests(node);
+		aggregate_requests(node, path->tag);
 	}
 
 	ret = apply_constraints(path);
