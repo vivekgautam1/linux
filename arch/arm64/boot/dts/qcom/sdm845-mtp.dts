@@ -195,3 +195,7 @@
 &cdsp_pil {
 	status = "okay";
 };
+
+&apps_smmu {
+	status = "okay";
+};
