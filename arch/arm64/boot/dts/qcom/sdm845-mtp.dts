@@ -210,3 +210,7 @@
 &apps_smmu {
 	status = "okay";
 };
+
+&kgsl_smmu {
+	status = "okay";
+};
