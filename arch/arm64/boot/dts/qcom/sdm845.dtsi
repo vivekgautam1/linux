@@ -1628,6 +1628,11 @@
 				reg = <0x17d10000 0x1000>;
 				status = "disabled";
 			};
+
+			qnoc: qnoc-rsc-hlos{
+				compatible = "qcom,sdm845-rsc-hlos";
+				status = "okay";
+			};
 		};
 
 		apps_rsc: rsc@179c0000 {
