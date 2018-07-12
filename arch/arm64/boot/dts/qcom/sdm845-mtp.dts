@@ -80,6 +80,17 @@
 			qcom,mode-threshold-currents = <0 10000>;
 		};
 
+		ldo14 {
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1880000>;
+			qcom,allowed-modes =
+				<RPMH_REGULATOR_MODE_LPM
+				RPMH_REGULATOR_MODE_HPM>;
+			qcom,mode-threshold-currents = <0 10000>;
+			qcom,regulator-initial-voltage = <1800000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_LPM>;
+		};
+
 		pm8998_l20: ldo20 {
 			regulator-min-microvolt = <2704000>;
 			regulator-max-microvolt = <2960000>;
