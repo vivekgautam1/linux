@@ -953,13 +953,6 @@
 				      <0x1d87c00 0x1dc>;
 				#phy-cells = <0>;
 			};
-
-			ufsphy_1: lane@1d87800 {
-				reg = <0x1d87800 0x108>,
-				      <0x1d87a00 0x1e0>,
-				      <0x1d87c00 0x1dc>;
-				#phy-cells = <0>;
-			};
 		};
 
 		tcsr_mutex_regs: syscon@1f40000 {
