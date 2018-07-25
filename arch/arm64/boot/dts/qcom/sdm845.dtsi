@@ -1665,6 +1665,8 @@
 			#size-cells = <1>;
 			ranges;
 
+			iommus = <&apps_smmu 0x740 0x0>;
+
 			clocks = <&gcc GCC_CFG_NOC_USB3_PRIM_AXI_CLK>,
 				 <&gcc GCC_USB30_PRIM_MASTER_CLK>,
 				 <&gcc GCC_AGGRE_USB3_PRIM_AXI_CLK>,
@@ -1706,6 +1708,8 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges;
+
+			iommus = <&apps_smmu 0x760 0x0>;
 
 			clocks = <&gcc GCC_CFG_NOC_USB3_SEC_AXI_CLK>,
 				 <&gcc GCC_USB30_SEC_MASTER_CLK>,
