@@ -221,16 +221,19 @@ static int dwc3_core_soft_reset(struct dwc3 *dwc)
 
 	usb_phy_init(dwc->usb2_phy);
 	usb_phy_init(dwc->usb3_phy);
+	dev_err(dwc->dev, " %s   [%d]  \n", __func__, __LINE__);
 	ret = phy_init(dwc->usb2_generic_phy);
 	if (ret < 0)
 		return ret;
 
+	dev_err(dwc->dev, " %s   [%d]  \n", __func__, __LINE__);
 	ret = phy_init(dwc->usb3_generic_phy);
 	if (ret < 0) {
 		phy_exit(dwc->usb2_generic_phy);
 		return ret;
 	}
 
+	dev_err(dwc->dev, " %s   [%d]  \n", __func__, __LINE__);
 	/*
 	 * We're resetting only the device side because, if we're in host mode,
 	 * XHCI driver will reset the host block. If dwc3 was configured for
@@ -243,6 +246,7 @@ static int dwc3_core_soft_reset(struct dwc3 *dwc)
 	reg |= DWC3_DCTL_CSFTRST;
 	dwc3_writel(dwc->regs, DWC3_DCTL, reg);
 
+	dev_err(dwc->dev, " %s   [%d]  \n", __func__, __LINE__);
 	do {
 		reg = dwc3_readl(dwc->regs, DWC3_DCTL);
 		if (!(reg & DWC3_DCTL_CSFTRST))
@@ -251,6 +255,7 @@ static int dwc3_core_soft_reset(struct dwc3 *dwc)
 		udelay(1);
 	} while (--retries);
 
+	dev_err(dwc->dev, " %s   [%d]  \n", __func__, __LINE__);
 	phy_exit(dwc->usb3_generic_phy);
 	phy_exit(dwc->usb2_generic_phy);
 
@@ -795,6 +800,7 @@ static int dwc3_core_init(struct dwc3 *dwc)
 		goto err0;
 	}
 
+	dev_err(dwc->dev, " %s   [%d]  \n", __func__, __LINE__);
 	/*
 	 * Write Linux Version Code to our GUID register so it's easy to figure
 	 * out which kernel version a bug was found.
@@ -808,6 +814,7 @@ static int dwc3_core_init(struct dwc3 *dwc)
 			dwc->maximum_speed = USB_SPEED_HIGH;
 	}
 
+	dev_err(dwc->dev, " %s   [%d]  \n", __func__, __LINE__);
 	ret = dwc3_phy_setup(dwc);
 	if (ret)
 		goto err0;
@@ -819,6 +826,7 @@ static int dwc3_core_init(struct dwc3 *dwc)
 		dwc->ulpi_ready = true;
 	}
 
+	dev_err(dwc->dev, " %s   [%d]  \n", __func__, __LINE__);
 	if (!dwc->phys_ready) {
 		ret = dwc3_core_get_phy(dwc);
 		if (ret)
@@ -826,10 +834,12 @@ static int dwc3_core_init(struct dwc3 *dwc)
 		dwc->phys_ready = true;
 	}
 
+	dev_err(dwc->dev, " %s   [%d]  \n", __func__, __LINE__);
 	ret = dwc3_core_soft_reset(dwc);
 	if (ret)
 		goto err0a;
 
+	dev_err(dwc->dev, " %s   [%d]  \n", __func__, __LINE__);
 	dwc3_core_setup_global_control(dwc);
 	dwc3_core_num_eps(dwc);
 
@@ -840,6 +850,7 @@ static int dwc3_core_init(struct dwc3 *dwc)
 	/* Adjust Frame Length */
 	dwc3_frame_length_adjustment(dwc);
 
+	dev_err(dwc->dev, " %s   [%d]  \n", __func__, __LINE__);
 	usb_phy_set_suspend(dwc->usb2_phy, 0);
 	usb_phy_set_suspend(dwc->usb3_phy, 0);
 	ret = phy_power_on(dwc->usb2_generic_phy);
@@ -883,6 +894,7 @@ static int dwc3_core_init(struct dwc3 *dwc)
 		dwc3_writel(dwc->regs, DWC3_GUCTL1, reg);
 	}
 
+	dev_err(dwc->dev, " %s   [%d]  \n", __func__, __LINE__);
 	/*
 	 * Must config both number of packets and max burst settings to enable
 	 * RX and/or TX threshold.
@@ -920,6 +932,7 @@ static int dwc3_core_init(struct dwc3 *dwc)
 		}
 	}
 
+	dev_err(dwc->dev, " %s   [%d]  \n", __func__, __LINE__);
 	return 0;
 
 err4:
@@ -1309,9 +1322,11 @@ static int dwc3_probe(struct platform_device *pdev)
 	if (dev->of_node) {
 		dwc->num_clks = ARRAY_SIZE(dwc3_core_clks);
 
+		dev_err(dev, "*** NOw trying to get clocks \n\n");
 		ret = clk_bulk_get(dev, dwc->num_clks, dwc->clks);
 		if (ret == -EPROBE_DEFER)
 			return ret;
+		dev_err(dev, "*** clocks get doesn't return defer \n\n");
 		/*
 		 * Clocks are optional, but new DT platforms should support all
 		 * clocks as required by the DT-binding.
@@ -1362,11 +1377,13 @@ static int dwc3_probe(struct platform_device *pdev)
 	if (ret)
 		goto err3;
 
+	dev_err(dev, "*** NOw doing core init \n\n");
 	ret = dwc3_core_init(dwc);
 	if (ret) {
 		dev_err(dev, "failed to initialize core\n");
 		goto err4;
 	}
+	dev_err(dev, "*** Core init done \n\n");
 
 	dwc3_check_params(dwc);
 
