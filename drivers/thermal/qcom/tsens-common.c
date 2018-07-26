@@ -104,11 +104,11 @@ int get_temp_common(struct tsens_device *tmdev, int id, int *temp)
 {
 	struct tsens_sensor *s = &tmdev->sensor[id];
 	u32 code;
-	unsigned int sensor_addr;
+	unsigned int status_reg;
 	int last_temp = 0, ret;
 
-	sensor_addr = S0_ST_ADDR + s->hw_id * SN_ADDR_OFFSET;
-	ret = regmap_read(tmdev->map, sensor_addr, &code);
+	status_reg = S0_ST_ADDR + s->hw_id * SN_ADDR_OFFSET;
+	ret = regmap_read(tmdev->map, status_reg, &code);
 	if (ret)
 		return ret;
 	last_temp = code & SN_ST_TEMP_MASK;
@@ -127,12 +127,10 @@ static const struct regmap_config tsens_config = {
 int __init init_common(struct tsens_device *tmdev)
 {
 	void __iomem *base;
+	struct resource *res;
 	struct platform_device *op = of_find_device_by_node(tmdev->dev->of_node);
 
 	if (!op)
-		return -EINVAL;
-	base = of_iomap(tmdev->dev->of_node, 0);
-	if (!base)
 		return -EINVAL;
 
 	/* The driver only uses the TM register address space for now */
@@ -143,11 +141,14 @@ int __init init_common(struct tsens_device *tmdev)
 		tmdev->tm_offset = 0x1000;
 	}
 
+	res = platform_get_resource(op, IORESOURCE_MEM, 0);
+	base = devm_ioremap_resource(&op->dev, res);
+	if (IS_ERR(base))
+		return PTR_ERR(base);
+
 	tmdev->map = devm_regmap_init_mmio(tmdev->dev, base, &tsens_config);
-	if (IS_ERR(tmdev->map)) {
-		iounmap(base);
+	if (IS_ERR(tmdev->map))
 		return PTR_ERR(tmdev->map);
-	}
 
 	return 0;
 }
