@@ -11,6 +11,9 @@ Required properties:
 					  "qcom,ufshc"
 - interrupts        : <interrupt mapping for UFS host controller IRQ>
 - reg               : <registers mapping>
+- reset             : reset specifier pair consists of phandle for the reset provider
+                      and reset lines used by this controller.
+- reset-names       : reset signal name strings sorted in the same order as the resets property.
 
 Optional properties:
 - phys                  : phandle to UFS PHY node
@@ -64,6 +67,8 @@ Example:
 		clocks = <&core 0>, <&ref 0>, <&iface 0>;
 		clock-names = "core_clk", "ref_clk", "iface_clk";
 		freq-table-hz = <100000000 200000000>, <0 0>, <0 0>;
+		resets = <clock_gcc GCC_UFS_BCR>;
+		reset-names = "core_reset";
 		phys = <&ufsphy1>;
 		phy-names = "ufsphy";
 	};
