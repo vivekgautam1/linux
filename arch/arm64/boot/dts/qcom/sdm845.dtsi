@@ -1980,11 +1980,8 @@
 			#size-cells = <1>;
 			ranges;
 
-			clock-names = "ref_clk_src",
-				"ref_clk",
-				"ref_aux_clk";
-			clocks = <&rpmhcc RPMH_CXO_CLK>,
-				<&gcc GCC_UFS_MEM_CLKREF_CLK>,
+			clock-names = "ref", "ref_aux";
+			clocks = <&gcc GCC_UFS_MEM_CLKREF_CLK>,
 				<&gcc GCC_UFS_PHY_PHY_AUX_CLK>;
 
 			status = "disabled";
@@ -1995,21 +1992,14 @@
 					<0x1d87c00 0x1dc>;
 				#phy-cells = <0>;
 			};
-
-			ufsphy_1: lane@0x1d87800 {
-				reg = <0x1d87800 0x108>,
-					<0x1d87a00 0x1e0>,
-					<0x1d87c00 0x1dc>;
-				#phy-cells = <0>;
-			};
 		};
 
 		ufshc: ufshc@1d84000 {
 			compatible = "qcom,ufshc";
 			reg = <0x1d84000 0x2500>;
 			interrupts = <0 265 IRQ_TYPE_LEVEL_HIGH>;
-			phys = <&ufsphy_0>, <&ufsphy_1>;
-			phy-names = "ufsphy_0", "ufsphy_1";
+			phys = <&ufsphy_0>;
+			phy-names = "ufsphy";
 
 			lanes-per-direction = <2>;
 			dev-ref-clk-freq = <0>; /* 19.2 MHz */
