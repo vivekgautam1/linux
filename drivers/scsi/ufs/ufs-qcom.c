@@ -608,6 +608,35 @@ out:
 	return err;
 }
 
+static int ufs_qcom_core_reset(struct ufs_hba *hba)
+{
+	int ret = -ENOTSUPP;
+
+	if (!hba->core_reset) {
+		dev_err(hba->dev, "%s: failed, err = %d\n", __func__,
+				ret);
+		goto out;
+	}
+
+	ret = reset_control_assert(hba->core_reset);
+	if (ret) {
+		dev_err(hba->dev, "core_reset assert failed, err = %d\n",
+				ret);
+		goto out;
+	}
+
+	/* As per spec, delay is required to let reset assert go through */
+	usleep_range(1, 2);
+
+	ret = reset_control_deassert(hba->core_reset);
+	if (ret)
+		dev_err(hba->dev, "core_reset deassert failed, err = %d\n",
+				ret);
+
+out:
+	return ret;
+}
+
 struct ufs_qcom_dev_params {
 	u32 pwm_rx_gear;	/* pwm rx gear to work in */
 	u32 pwm_tx_gear;	/* pwm tx gear to work in */
@@ -1663,6 +1692,7 @@ static struct ufs_hba_variant_ops ufs_hba_qcom_vops = {
 	.apply_dev_quirks	= ufs_qcom_apply_dev_quirks,
 	.suspend		= ufs_qcom_suspend,
 	.resume			= ufs_qcom_resume,
+	.core_reset		= ufs_qcom_core_reset,
 	.dbg_register_dump	= ufs_qcom_dump_dbg_regs,
 };
 

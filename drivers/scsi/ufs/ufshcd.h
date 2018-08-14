@@ -55,6 +55,7 @@
 #include <linux/clk.h>
 #include <linux/completion.h>
 #include <linux/regulator/consumer.h>
+#include <linux/reset.h>
 #include "unipro.h"
 
 #include <asm/irq.h>
@@ -296,6 +297,8 @@ struct ufs_pwr_mode_info {
  * @apply_dev_quirks: called to apply device specific quirks
  * @suspend: called during host controller PM callback
  * @resume: called during host controller PM callback
+ * @core_reset:  called before UFS PHY init and during link recovery for
+ *		 handling variant specific implementations of resetting the hci
  * @dbg_register_dump: used to dump controller debug information
  * @phy_initialization: used to initialize phys
  */
@@ -324,6 +327,7 @@ struct ufs_hba_variant_ops {
 	int	(*apply_dev_quirks)(struct ufs_hba *);
 	int     (*suspend)(struct ufs_hba *, enum ufs_pm_op);
 	int     (*resume)(struct ufs_hba *, enum ufs_pm_op);
+	int	(*core_reset)(struct ufs_hba *);
 	void	(*dbg_register_dump)(struct ufs_hba *hba);
 	int	(*phy_initialization)(struct ufs_hba *);
 };
@@ -700,6 +704,7 @@ struct ufs_hba {
 	bool is_urgent_bkops_lvl_checked;
 
 	struct rw_semaphore clk_scaling_lock;
+	struct reset_control *core_reset;
 	struct ufs_desc_size desc_size;
 	atomic_t scsi_block_reqs_cnt;
 };
@@ -1017,6 +1022,13 @@ static inline int ufshcd_vops_resume(struct ufs_hba *hba, enum ufs_pm_op op)
 	if (hba->vops && hba->vops->resume)
 		return hba->vops->resume(hba, op);
 
+	return 0;
+}
+
+static inline int ufshcd_vops_core_reset(struct ufs_hba *hba)
+{
+	if (hba->vops && hba->vops->core_reset)
+		return hba->vops->core_reset(hba);
 	return 0;
 }
 
