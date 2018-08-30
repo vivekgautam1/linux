@@ -1,15 +1,8 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 /*
  * Copyright (c) 2015, The Linux Foundation. All rights reserved.
- *
- * This software is licensed under the terms of the GNU General Public
- * License version 2, as published by the Free Software Foundation, and
- * may be copied, distributed, and modified under those terms.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
  */
+
 #ifndef __QCOM_TSENS_H__
 #define __QCOM_TSENS_H__
 
@@ -21,11 +14,19 @@
 
 struct tsens_device;
 
+/**
+ * struct tsens_sensor - sensor-specific data
+ * @tmdev: tsens device instance this sensor is connected to
+ * @tzd: thermal zone corresponding to this sensor
+ * @offset: offset from calibration data to convert ADC data to degrees
+ * @hw_id: unique sensor ID for each sensor connected to tsens device instance
+ * @slope: slope from calibration data to convert ADC data to degrees
+ * @status: 8960-specific status register addresses
+ */
 struct tsens_sensor {
 	struct tsens_device		*tmdev;
 	struct thermal_zone_device	*tzd;
 	int				offset;
-	int				id;
 	int				hw_id;
 	int				slope;
 	u32				status;
@@ -55,15 +56,23 @@ struct tsens_ops {
 	int (*get_trend)(struct tsens_device *, int, enum thermal_trend *);
 };
 
+enum reg_list {
+	SROT_CTRL_OFFSET,
+
+	REG_ARRAY_SIZE,
+};
+
 /**
  * struct tsens_data - tsens instance specific data
  * @num_sensors: Max number of sensors supported by platform
  * @ops: operations the tsens instance supports
  * @hw_ids: Subset of sensors ids supported by platform, if not the first n
+ * @reg_offsets: Register offsets for commonly used registers
  */
 struct tsens_data {
 	const u32		num_sensors;
 	const struct tsens_ops	*ops;
+	const u16		reg_offsets[REG_ARRAY_SIZE];
 	unsigned int		*hw_ids;
 };
 
@@ -76,8 +85,10 @@ struct tsens_context {
 struct tsens_device {
 	struct device			*dev;
 	u32				num_sensors;
-	struct regmap			*map;
+	struct regmap			*tm_map;
+	struct regmap			*srot_map;
 	u32				tm_offset;
+	u16				reg_offsets[REG_ARRAY_SIZE];
 	struct tsens_context		ctx;
 	const struct tsens_ops		*ops;
 	struct tsens_sensor		sensor[0];
