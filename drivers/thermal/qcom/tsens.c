@@ -1,15 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2015, The Linux Foundation. All rights reserved.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 and
- * only version 2 as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
  */
 
 #include <linux/err.h>
@@ -26,7 +17,7 @@ static int tsens_get_temp(void *data, int *temp)
 	const struct tsens_sensor *s = data;
 	struct tsens_device *tmdev = s->tmdev;
 
-	return tmdev->ops->get_temp(tmdev, s->id, temp);
+	return tmdev->ops->get_temp(tmdev, s->hw_id, temp);
 }
 
 static int tsens_get_trend(void *p, int trip, enum thermal_trend *trend)
@@ -35,7 +26,7 @@ static int tsens_get_trend(void *p, int trip, enum thermal_trend *trend)
 	struct tsens_device *tmdev = s->tmdev;
 
 	if (tmdev->ops->get_trend)
-		return  tmdev->ops->get_trend(tmdev, s->id, trend);
+		return  tmdev->ops->get_trend(tmdev, s->hw_id, trend);
 
 	return -ENOTSUPP;
 }
@@ -89,15 +80,9 @@ static int tsens_register(struct tsens_device *tmdev)
 {
 	int i;
 	struct thermal_zone_device *tzd;
-	u32 *hw_id, n = tmdev->num_sensors;
-
-	hw_id = devm_kcalloc(tmdev->dev, n, sizeof(u32), GFP_KERNEL);
-	if (!hw_id)
-		return -ENOMEM;
 
 	for (i = 0;  i < tmdev->num_sensors; i++) {
 		tmdev->sensor[i].tmdev = tmdev;
-		tmdev->sensor[i].id = i;
 		tzd = devm_thermal_zone_of_sensor_register(tmdev->dev, i,
 							   &tmdev->sensor[i],
 							   &tsens_of_ops);
@@ -157,6 +142,9 @@ static int tsens_probe(struct platform_device *pdev)
 			tmdev->sensor[i].hw_id = data->hw_ids[i];
 		else
 			tmdev->sensor[i].hw_id = i;
+	}
+	for (i = 0; i < REG_ARRAY_SIZE; i++) {
+		tmdev->reg_offsets[i] = data->reg_offsets[i];
 	}
 
 	if (!tmdev->ops || !tmdev->ops->init || !tmdev->ops->get_temp)
