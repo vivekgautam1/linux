@@ -649,8 +649,6 @@ struct qmp_phy_cfg {
 
 	/* true, if PHY has a separate DP_COM control block */
 	bool has_phy_dp_com_ctrl;
-	/* true, if PHY has secondary tx/rx lanes to be configured */
-	bool is_dual_lane_phy;
 	/* Register offset of secondary tx/rx lanes for USB DP combo PHY */
 	unsigned int tx_b_lane_offset;
 	unsigned int rx_b_lane_offset;
@@ -760,7 +758,7 @@ static const char * const msm8996_usb3phy_reset_l[] = {
 };
 
 /* list of regulators */
-static const char * const qmp_phy_vreg_l[] = {
+static const char * const msm8996_phy_vreg_l[] = {
 	"vdda-phy", "vdda-pll",
 };
 
@@ -780,8 +778,8 @@ static const struct qmp_phy_cfg msm8996_pciephy_cfg = {
 	.num_clks		= ARRAY_SIZE(msm8996_phy_clk_l),
 	.reset_list		= msm8996_pciephy_reset_l,
 	.num_resets		= ARRAY_SIZE(msm8996_pciephy_reset_l),
-	.vreg_list		= qmp_phy_vreg_l,
-	.num_vregs		= ARRAY_SIZE(qmp_phy_vreg_l),
+	.vreg_list		= msm8996_phy_vreg_l,
+	.num_vregs		= ARRAY_SIZE(msm8996_phy_vreg_l),
 	.regs			= pciephy_regs_layout,
 
 	.start_ctrl		= PCS_START | PLL_READY_GATE_EN,
@@ -811,8 +809,8 @@ static const struct qmp_phy_cfg msm8996_usb3phy_cfg = {
 	.num_clks		= ARRAY_SIZE(msm8996_phy_clk_l),
 	.reset_list		= msm8996_usb3phy_reset_l,
 	.num_resets		= ARRAY_SIZE(msm8996_usb3phy_reset_l),
-	.vreg_list		= qmp_phy_vreg_l,
-	.num_vregs		= ARRAY_SIZE(qmp_phy_vreg_l),
+	.vreg_list		= msm8996_phy_vreg_l,
+	.num_vregs		= ARRAY_SIZE(msm8996_phy_vreg_l),
 	.regs			= usb3phy_regs_layout,
 
 	.start_ctrl		= SERDES_START | PCS_START,
@@ -872,8 +870,8 @@ static const struct qmp_phy_cfg qmp_v3_usb3phy_cfg = {
 	.num_clks		= ARRAY_SIZE(qmp_v3_phy_clk_l),
 	.reset_list		= msm8996_usb3phy_reset_l,
 	.num_resets		= ARRAY_SIZE(msm8996_usb3phy_reset_l),
-	.vreg_list		= qmp_phy_vreg_l,
-	.num_vregs		= ARRAY_SIZE(qmp_phy_vreg_l),
+	.vreg_list		= msm8996_phy_vreg_l,
+	.num_vregs		= ARRAY_SIZE(msm8996_phy_vreg_l),
 	.regs			= qmp_v3_usb3phy_regs_layout,
 
 	.start_ctrl		= SERDES_START | PCS_START,
@@ -885,7 +883,6 @@ static const struct qmp_phy_cfg qmp_v3_usb3phy_cfg = {
 	.pwrdn_delay_max	= POWER_DOWN_DELAY_US_MAX,
 
 	.has_phy_dp_com_ctrl	= true,
-	.is_dual_lane_phy	= true,
 	.tx_b_lane_offset	= 0x400,
 	.rx_b_lane_offset	= 0x400,
 };
@@ -906,8 +903,8 @@ static const struct qmp_phy_cfg qmp_v3_usb3_uniphy_cfg = {
 	.num_clks		= ARRAY_SIZE(qmp_v3_phy_clk_l),
 	.reset_list		= msm8996_usb3phy_reset_l,
 	.num_resets		= ARRAY_SIZE(msm8996_usb3phy_reset_l),
-	.vreg_list		= qmp_phy_vreg_l,
-	.num_vregs		= ARRAY_SIZE(qmp_phy_vreg_l),
+	.vreg_list		= msm8996_phy_vreg_l,
+	.num_vregs		= ARRAY_SIZE(msm8996_phy_vreg_l),
 	.regs			= qmp_v3_usb3phy_regs_layout,
 
 	.start_ctrl		= SERDES_START | PCS_START,
@@ -1119,12 +1116,12 @@ static int qcom_qmp_phy_init(struct phy *phy)
 	/* Tx, Rx, and PCS configurations */
 	qcom_qmp_phy_configure(tx, cfg->regs, cfg->tx_tbl, cfg->tx_tbl_num);
 	/* Configuration for other LANE for USB-DP combo PHY */
-	if (cfg->is_dual_lane_phy)
+	if (cfg->has_phy_dp_com_ctrl)
 		qcom_qmp_phy_configure(tx + cfg->tx_b_lane_offset, cfg->regs,
 				       cfg->tx_tbl, cfg->tx_tbl_num);
 
 	qcom_qmp_phy_configure(rx, cfg->regs, cfg->rx_tbl, cfg->rx_tbl_num);
-	if (cfg->is_dual_lane_phy)
+	if (cfg->has_phy_dp_com_ctrl)
 		qcom_qmp_phy_configure(rx + cfg->rx_b_lane_offset, cfg->regs,
 				       cfg->rx_tbl, cfg->rx_tbl_num);
 
