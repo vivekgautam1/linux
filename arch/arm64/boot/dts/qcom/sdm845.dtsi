@@ -977,6 +977,35 @@
 			interrupt-controller;
 			#interrupt-cells = <2>;
 
+			dpu_dsi_active: dpu-dsi-active {
+				pinmux {
+					pins = "gpio6", "gpio52";
+					function = "gpio";
+				};
+
+				/* TODO: move pinconf to board file */
+				pinconf {
+					pins = "gpio6", "gpio52";
+					drive-strength = <8>;
+					/*bias-pull-up; */
+					bias-disable;
+				};
+			};
+
+			dpu_dsi_suspend: dpu-dsi-suspend {
+				pinmux {
+					pins = "gpio6", "gpio52";
+					function = "gpio";
+				};
+
+				/* TODO: move pinconf to board file */
+				pinconf {
+					pins = "gpio6", "gpio52";
+					drive-strength = <2>;
+					bias-pull-down;
+				};
+			};
+
 			qup_i2c0_default: qup-i2c0-default {
 				pinmux {
 					pins = "gpio0", "gpio1";
