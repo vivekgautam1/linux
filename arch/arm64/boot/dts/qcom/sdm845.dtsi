@@ -929,6 +929,7 @@
 			resets = <&gcc GCC_UFS_PHY_BCR>;
 			reset-names = "core_reset";
 
+			iommus = <&apps_smmu 0x100 0xf>;
 			status = "disabled";
 		};
 
