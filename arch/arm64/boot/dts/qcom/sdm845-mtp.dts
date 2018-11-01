@@ -8,6 +8,7 @@
 /dts-v1/;
 
 #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
+#include <dt-bindings/gpio/gpio.h>
 #include "sdm845.dtsi"
 
 / {
@@ -365,8 +366,8 @@
 		pinctrl-0 = <&dpu_dsi_active>;
 		pinctrl-1 = <&dpu_dsi_suspend>;
 
-		reset-gpios = <&tlmm 6 0>;
-		mode-gpios = <&tlmm 52 0>;
+		reset-gpios = <&tlmm 6 GPIO_ACTIVE_LOW>;
+		mode-gpios = <&tlmm 52 GPIO_ACTIVE_HIGH>;
 
 		display-timings {
 			timing0: timing-0 {
