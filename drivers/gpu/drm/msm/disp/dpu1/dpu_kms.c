@@ -896,9 +896,9 @@ static int _dpu_kms_mmu_init(struct dpu_kms *dpu_kms)
 	struct msm_gem_address_space *aspace;
 	int ret;
 
-	domain = iommu_get_domain_for_dev(dpu_kms->dev->dev);
+	domain = iommu_domain_alloc(&platform_bus_type);
 	if (!domain) {
-		DPU_ERROR("failed to get iommu domain for DPU\n");
+		DPU_ERROR("failed to create iommu domain for DPU\n");
 		return PTR_ERR(domain);
 	}
 
