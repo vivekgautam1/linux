@@ -766,7 +766,6 @@
 		phy@34000 {
 			compatible = "qcom,msm8996-qmp-pcie-phy";
 			reg = <0x34000 0x488>;
-			#clock-cells = <1>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges;
@@ -789,6 +788,7 @@
 				reg = <0x035000 0x130>,
 					<0x035200 0x200>,
 					<0x035400 0x1dc>;
+				#clock-cells = <0>;
 				#phy-cells = <0>;
 
 				clock-output-names = "pcie_0_pipe_clk_src";
@@ -802,6 +802,7 @@
 				reg = <0x036000 0x130>,
 					<0x036200 0x200>,
 					<0x036400 0x1dc>;
+				#clock-cells = <0>;
 				#phy-cells = <0>;
 
 				clock-output-names = "pcie_1_pipe_clk_src";
@@ -815,6 +816,7 @@
 				reg = <0x037000 0x130>,
 					<0x037200 0x200>,
 					<0x037400 0x1dc>;
+				#clock-cells = <0>;
 				#phy-cells = <0>;
 
 				clock-output-names = "pcie_2_pipe_clk_src";
@@ -828,7 +830,6 @@
 		phy@7410000 {
 			compatible = "qcom,msm8996-qmp-usb3-phy";
 			reg = <0x7410000 0x1c4>;
-			#clock-cells = <1>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges;
@@ -850,6 +851,7 @@
 				reg = <0x7410200 0x200>,
 					<0x7410400 0x130>,
 					<0x7410600 0x1a8>;
+				#clock-cells = <0>;
 				#phy-cells = <0>;
 
 				clock-output-names = "usb3_phy_pipe_clk_src";
