@@ -6,6 +6,7 @@
 
 #include <linux/bitfield.h>
 #include <linux/of.h>
+#include <linux/qcom_scm.h>
 
 #include "arm-smmu.h"
 
@@ -148,6 +149,30 @@ static const struct arm_smmu_impl arm_mmu500_impl = {
 };
 
 
+static int qcom_sdm845_smmu500_reset(struct arm_smmu_device *smmu)
+{
+	int ret;
+
+	arm_mmu500_reset(smmu);
+
+	/*
+	 * To address performance degradation in non-real time clients,
+	 * such as USB and UFS, turn off wait-for-safe on sdm845 based boards,
+	 * such as MTP and db845, whose firmwares implement secure monitor
+	 * call handlers to turn on/off the wait-for-safe logic.
+	 */
+	ret = qcom_scm_qsmmu500_wait_safe_toggle(0);
+	if (ret)
+		dev_warn(smmu->dev, "Failed to turn off SAFE logic\n");
+
+	return 0;
+}
+
+const struct arm_smmu_impl qcom_sdm845_smmu500_impl = {
+	.reset = qcom_sdm845_smmu500_reset,
+};
+
+
 struct arm_smmu_device *arm_smmu_impl_init(struct arm_smmu_device *smmu)
 {
 	/*
@@ -169,6 +194,9 @@ struct arm_smmu_device *arm_smmu_impl_init(struct arm_smmu_device *smmu)
 	if (of_property_read_bool(smmu->dev->of_node,
 				  "calxeda,smmu-secure-config-access"))
 		smmu->impl = &calxeda_impl;
+
+	if (of_device_is_compatible(smmu->dev->of_node, "qcom,sdm845-smmu-500"))
+		smmu->impl = &qcom_sdm845_smmu500_impl;
 
 	return smmu;
 }
